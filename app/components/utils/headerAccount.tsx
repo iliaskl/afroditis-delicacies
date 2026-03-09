@@ -15,6 +15,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/authContext/authContext";
 import AddressAutocomplete from "../addressAutocomplete/AddressAutocomplete";
 import type { AddressDetails } from "../../services/addressService";
+import { getAnalytics } from "../../services/analyticsService";
+import type { AnalyticsData } from "../../services/analyticsService";
 import "./headerAccount.css";
 
 // Mapbox access token
@@ -30,7 +32,8 @@ type ProfileView =
   | "favorites"
   | "orderHistory"
   | "accountSettings"
-  | "manageCalendar";
+  | "manageCalendar"
+  | "analytics";
 
 const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
   const {
@@ -55,6 +58,8 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<ProfileView>("main");
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -468,6 +473,14 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
         confirmPassword: "",
       });
     }
+
+    if (view === "analytics" && isAdmin) {
+      setAnalyticsLoading(true);
+      getAnalytics()
+        .then((data) => setAnalytics(data))
+        .catch(() => setAnalytics(null))
+        .finally(() => setAnalyticsLoading(false));
+    }
   };
 
   if (!isOpen) return null;
@@ -512,8 +525,9 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               {currentView === "main" && "My Account"}
               {currentView === "manageCalendar" && "Manage Calendar"}
               {currentView === "favorites" && "My Favorites"}
-              {currentView === "orderHistory" && "Order History"}
+              {currentView === "orderHistory" && "Order History"}{" "}
               {currentView === "accountSettings" && "Account Settings"}
+              {currentView === "analytics" && "Business Analytics"}
             </h2>
           </div>
 
@@ -545,34 +559,65 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
 
                 <div className="profile-menu">
                   {isAdmin ? (
-                    <button
-                      className="profile-menu-item"
-                      onClick={() => navigateToView("manageCalendar")}
-                    >
-                      <svg
-                        className="menu-icon"
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
+                    <>
+                      <button
+                        className="profile-menu-item"
+                        onClick={() => navigateToView("manageCalendar")}
                       >
-                        <path
-                          fill="currentColor"
-                          d="M19 3h-1V1h-2v2H8V1H6v2H5C3.89 3 3 3.9 3 5v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
-                        />
-                      </svg>
-                      <span>Manage Calendar</span>
-                      <svg
-                        className="chevron"
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
+                        <svg
+                          className="menu-icon"
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M19 3h-1V1h-2v2H8V1H6v2H5C3.89 3 3 3.9 3 5v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
+                          />
+                        </svg>
+                        <span>Manage Calendar</span>
+                        <svg
+                          className="chevron"
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
+                          />
+                        </svg>
+                      </button>
+
+                      <button
+                        className="profile-menu-item"
+                        onClick={() => navigateToView("analytics")}
                       >
-                        <path
-                          fill="currentColor"
-                          d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                        />
-                      </svg>
-                    </button>
+                        <svg
+                          className="menu-icon"
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"
+                          />
+                        </svg>
+                        <span>Business Analytics</span>
+                        <svg
+                          className="chevron"
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
+                          />
+                        </svg>
+                      </button>
+                    </>
                   ) : (
                     <button
                       className="profile-menu-item"
@@ -604,35 +649,36 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                     </button>
                   )}
 
-                  <button
-                    className="profile-menu-item"
-                    onClick={() => navigateToView("orderHistory")}
-                  >
-                    <svg
-                      className="menu-icon"
-                      viewBox="0 0 24 24"
-                      width="20"
-                      height="20"
+                  {!isAdmin && (
+                    <button
+                      className="profile-menu-item"
+                      onClick={() => navigateToView("orderHistory")}
                     >
-                      <path
-                        fill="currentColor"
-                        d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
-                      />
-                    </svg>
-                    <span>Order History</span>
-                    <svg
-                      className="chevron"
-                      viewBox="0 0 24 24"
-                      width="20"
-                      height="20"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                      />
-                    </svg>
-                  </button>
-
+                      <svg
+                        className="menu-icon"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
+                        />
+                      </svg>
+                      <span>Order History</span>
+                      <svg
+                        className="chevron"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
+                        />
+                      </svg>
+                    </button>
+                  )}
                   <button
                     className="profile-menu-item"
                     onClick={() => navigateToView("accountSettings")}
@@ -849,6 +895,166 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                     <span className="legend-dot past-dot" /> Past
                   </span>
                 </div>
+              </div>
+            )}
+
+            {currentView === "analytics" && (
+              <div className="analytics-view">
+                {analyticsLoading ? (
+                  <p className="empty-state">Loading analytics...</p>
+                ) : !analytics ? (
+                  <p className="empty-state">Could not load analytics.</p>
+                ) : (
+                  <>
+                    {/* Revenue + Orders row */}
+                    <div className="analytics-grid-2">
+                      <div className="analytics-card analytics-card-green">
+                        <span className="analytics-label">
+                          Revenue This Month
+                        </span>
+                        <span className="analytics-value">
+                          ${analytics.revenueThisMonth.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="analytics-card analytics-card-blue">
+                        <span className="analytics-label">Avg Order Value</span>
+                        <span className="analytics-value">
+                          ${analytics.averageOrderValue.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Orders comparison */}
+                    <div className="analytics-card analytics-card-gold">
+                      <span className="analytics-label">Orders This Month</span>
+                      <span className="analytics-value">
+                        {analytics.ordersThisMonth}
+                      </span>
+                      <span className="analytics-sublabel">
+                        vs {analytics.ordersLastMonth} last month
+                        {analytics.ordersLastMonth > 0 && (
+                          <span
+                            className={
+                              analytics.ordersThisMonth >=
+                              analytics.ordersLastMonth
+                                ? "analytics-up"
+                                : "analytics-down"
+                            }
+                          >
+                            {" "}
+                            {analytics.ordersThisMonth >=
+                            analytics.ordersLastMonth
+                              ? "▲"
+                              : "▼"}{" "}
+                            {Math.abs(
+                              analytics.ordersThisMonth -
+                                analytics.ordersLastMonth,
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Status breakdown */}
+                    <div className="analytics-section">
+                      <h4 className="analytics-section-title">
+                        Order Status Breakdown
+                      </h4>
+                      <div className="analytics-status-grid">
+                        {(
+                          [
+                            "pending",
+                            "active",
+                            "delivered",
+                            "declined",
+                          ] as const
+                        ).map((s) => (
+                          <div
+                            key={s}
+                            className={`analytics-status-pill analytics-status-${s}`}
+                          >
+                            <span className="analytics-status-count">
+                              {analytics.statusBreakdown[s]}
+                            </span>
+                            <span className="analytics-status-name">
+                              {s.charAt(0).toUpperCase() + s.slice(1)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Top dishes */}
+                    {analytics.topDishes.length > 0 && (
+                      <div className="analytics-section">
+                        <h4 className="analytics-section-title">
+                          Most Popular Dishes
+                        </h4>
+                        <div className="analytics-bar-list">
+                          {analytics.topDishes.map((d, i) => {
+                            const max = analytics.topDishes[0].count;
+                            return (
+                              <div key={d.name} className="analytics-bar-row">
+                                <span className="analytics-bar-rank">
+                                  #{i + 1}
+                                </span>
+                                <span className="analytics-bar-label">
+                                  {d.name}
+                                </span>
+                                <div className="analytics-bar-track">
+                                  <div
+                                    className="analytics-bar-fill"
+                                    style={{
+                                      width: `${(d.count / max) * 100}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="analytics-bar-count">
+                                  {d.count}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Busiest days */}
+                    {analytics.busiestDays.length > 0 && (
+                      <div className="analytics-section">
+                        <h4 className="analytics-section-title">
+                          Busiest Delivery Days
+                        </h4>
+                        <div className="analytics-bar-list">
+                          {analytics.busiestDays.map((d, i) => {
+                            const max = analytics.busiestDays[0].count;
+                            return (
+                              <div key={d.day} className="analytics-bar-row">
+                                <span className="analytics-bar-rank">
+                                  #{i + 1}
+                                </span>
+                                <span className="analytics-bar-label">
+                                  {d.day}
+                                </span>
+                                <div className="analytics-bar-track">
+                                  <div
+                                    className="analytics-bar-fill analytics-bar-fill-blue"
+                                    style={{
+                                      width: `${(d.count / max) * 100}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="analytics-bar-count">
+                                  {d.count}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
