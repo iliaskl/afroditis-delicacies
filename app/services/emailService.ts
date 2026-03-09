@@ -18,16 +18,22 @@ interface EmailNotificationData {
 class EmailService {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
-  private logEmailNotification(data: EmailNotificationData): void {
-    console.log("=".repeat(80));
-    console.log("📧 EMAIL NOTIFICATION");
-    console.log("=".repeat(80));
-    console.log(`To: ${data.to}`);
-    console.log(`Subject: ${data.subject}`);
-    console.log(`Type: ${data.type}`);
-    console.log("-".repeat(80));
-    console.log(data.body);
-    console.log("=".repeat(80));
+  private async sendEmail(data: EmailNotificationData): Promise<void> {
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: data.to,
+        subject: data.subject,
+        html: data.body,
+        replyTo: "iliaskladakis@outlook.com",
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to send email");
+    }
   }
 
   private formatOrderItems(order: Order): string {
@@ -107,7 +113,7 @@ Warm regards,
 Afroditi's Delicacies
       `.trim();
 
-      this.logEmailNotification({
+      await this.sendEmail({
         to: order.customerEmail,
         subject: `Order Received — ${order.orderCode} | Afroditi's Delicacies`,
         body,
@@ -166,7 +172,7 @@ Log in to the website to approve or decline this order.
       for (const adminDoc of adminsSnap.docs) {
         const adminEmail = adminDoc.data().email;
         if (adminEmail) {
-          this.logEmailNotification({
+          await this.sendEmail({
             to: adminEmail,
             subject: `⚡ New Order — ${order.orderCode} from ${order.customerName}`,
             body,
@@ -211,7 +217,7 @@ Warm regards,
 Afroditi's Delicacies
       `.trim();
 
-      this.logEmailNotification({
+      await this.sendEmail({
         to: order.customerEmail,
         subject: `✅ Order Approved — ${order.orderCode} | Afroditi's Delicacies`,
         body,
@@ -253,7 +259,7 @@ Warm regards,
 Afroditi's Delicacies
       `.trim();
 
-      this.logEmailNotification({
+      await this.sendEmail({
         to: order.customerEmail,
         subject: `Order Update — ${order.orderCode} | Afroditi's Delicacies`,
         body,
@@ -276,7 +282,7 @@ Afroditi's Delicacies
         timeStyle: "short",
       });
 
-      this.logEmailNotification({
+      await this.sendEmail({
         to: userEmail,
         subject: "Your Password Has Been Changed — Afroditi's Delicacies",
         body: this.getPasswordChangeEmailTemplate(userEmail),
@@ -313,14 +319,14 @@ The Afroditi's Delicacies Team
     newEmail: string,
   ): Promise<void> {
     try {
-      this.logEmailNotification({
+      await this.sendEmail({
         to: oldEmail,
         subject: "Email Address Changed — Afroditi's Delicacies",
         body: `Your email address has been changed from ${oldEmail} to ${newEmail}. If you did not make this change, please contact us immediately.`,
         type: "email_change",
       });
 
-      this.logEmailNotification({
+      await this.sendEmail({
         to: newEmail,
         subject: "Welcome to Your New Email — Afroditi's Delicacies",
         body: `Your email address for Afroditi's Delicacies has been successfully updated to ${newEmail}.`,
