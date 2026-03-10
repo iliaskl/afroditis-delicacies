@@ -2,7 +2,7 @@ import React from "react";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/about.css";
-import afroditiImage from '../img/afroditi.jpg';
+import afroditiImage from '../../public/img/afroditi.jpg';
 
 export default function About() {
     return (

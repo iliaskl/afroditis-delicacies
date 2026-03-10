@@ -5,9 +5,9 @@ import Footer from "../components/utils/footer";
 import "../styles/home.css";
 
 // Import images from app/img folder
-import pastitsioImage from "../img/pastitsio.jpg";
-import tyropitaImage from "../img/tyropita.jpg";
-import tritipImage from "../img/tritip.jpg";
+import pastitsioImage from "../../src/img/carousel/pastitsio.jpg";
+import tyropitaImage from "../../src/img/carousel/tyropita.jpg";
+import tritipImage from "../../src/img/carousel/tritip.jpg";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -254,7 +254,7 @@ export default function Home() {
                 <div className="video-aspect-ratio">
 
                   <video className="video-iframe" controls>
-                    <source src="/videos/feature_vid.mp4" type="video/mp4" />
+                    <source src="../../src/videos/feature_vid.mp4" type="video/mp4" />
                   </video>
                 </div>
               </div>
