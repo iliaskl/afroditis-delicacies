@@ -6,4 +6,5 @@ export default [
   route("about", "routes/about.tsx"),
   route("checkout", "routes/checkout.tsx"),
   route("orders", "routes/orders.tsx"),
+  route("api/send-email", "routes/api.send-email.ts"),
 ] satisfies RouteConfig;
