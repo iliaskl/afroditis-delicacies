@@ -54,7 +54,7 @@ function emailWrapper(content: string): string {
           <tr>
             <td style="background:${BRAND.bg};border-top:1px solid ${BRAND.lightBorder};padding:24px 40px;text-align:center;">
               <p style="margin:0 0 4px 0;font-size:13px;color:#7a8060;font-family:Georgia,serif;">Questions? Reply to this email or reach us at</p>
-              <a href="mailto:afroditis.delicacies@gmail.com" style="color:${BRAND.green};font-size:13px;text-decoration:none;font-family:Georgia,serif;">afroditis.delicacies@gmail.com</a>
+              <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};font-size:13px;text-decoration:none;font-family:Georgia,serif;">info@afroditisdelicacies.com</a>
               <p style="margin:16px 0 0 0;font-size:11px;color:#aaa;font-family:Georgia,serif;">© ${new Date().getFullYear()} Afroditi's Delicacies · Seattle, WA</p>
             </td>
           </tr>
@@ -420,7 +420,7 @@ class EmailService {
 
         ${noteHtml}
 
-        ${alertBox(BRAND.green, "#f0f4e8", `We'd love to serve you another time! Feel free to place a new order with a different delivery date, or <a href="mailto:afroditis.delicacies@gmail.com" style="color:${BRAND.green};">contact us</a> to discuss alternatives.`)}
+        ${alertBox(BRAND.green, "#f0f4e8", `We'd love to serve you another time! Feel free to place a new order with a different delivery date, or <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};">contact us</a> to discuss alternatives.`)}
 
         <p style="margin:24px 0 0 0;font-size:15px;color:#666;font-family:Georgia,serif;line-height:1.7;">
           We apologize for the inconvenience.<br/>
@@ -460,7 +460,7 @@ class EmailService {
           { label: "Changed On", value: timestamp },
         ])}
 
-        ${alertBox("#c75146", "#fdf0ef", `If you did not make this change, please <a href="mailto:afroditis.delicacies@gmail.com" style="color:#c75146;font-weight:bold;">contact us immediately</a> or reset your password right away.`)}
+        ${alertBox("#c75146", "#fdf0ef", `If you did not make this change, please <a href="mailto:info@afroditisdelicacies.com" style="color:#c75146;font-weight:bold;">contact us immediately</a> or reset your password right away.`)}
       `;
 
       await this.sendEmail({
@@ -486,7 +486,7 @@ class EmailService {
           { label: "Old Email", value: oldEmail },
           { label: "New Email", value: newEmail },
         ])}
-        ${alertBox("#c75146", "#fdf0ef", `If you did not make this change, please <a href="mailto:afroditis.delicacies@gmail.com" style="color:#c75146;font-weight:bold;">contact us immediately</a>.`)}
+        ${alertBox("#c75146", "#fdf0ef", `If you did not make this change, please <a href="mailto:info@afroditisdelicacies.com" style="color:#c75146;font-weight:bold;">contact us immediately</a>.`)}
       `;
 
       const notifyNew = `
