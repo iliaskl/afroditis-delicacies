@@ -158,7 +158,7 @@
   font-weight: 400;
   margin-bottom: 1.5rem;
   line-height: 1.3;
-  font-family: 'Cormorant Garamond', 'Palatino', 'Palatino Linotype', serif;
+  font-family: "Cormorant Garamond", "Palatino", "Palatino Linotype", serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #ffffff;
@@ -170,7 +170,7 @@
   line-height: 1.7;
   opacity: 0.95;
   font-weight: 300;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 .hero-buttons {
@@ -191,7 +191,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: none;
   cursor: pointer;
-  font-family: 'Cormorant Garamond', 'Palatino', serif;
+  font-family: "Cormorant Garamond", "Palatino", serif;
   letter-spacing: 0.05em;
 }
 
@@ -211,7 +211,7 @@
   transition: all 0.3s;
   border: 2px solid white;
   cursor: pointer;
-  font-family: 'Cormorant Garamond', 'Palatino', serif;
+  font-family: "Cormorant Garamond", "Palatino", serif;
   letter-spacing: 0.05em;
 }
 
@@ -232,7 +232,7 @@
   text-align: center;
   margin-bottom: 3rem;
   color: #3a3a3a;
-  font-family: 'Cormorant Garamond', 'Palatino', 'Palatino Linotype', serif;
+  font-family: "Cormorant Garamond", "Palatino", "Palatino Linotype", serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -281,7 +281,7 @@
   margin-bottom: 1rem;
   text-align: center;
   color: #3a3a3a;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   letter-spacing: 0.01em;
 }
 
@@ -291,7 +291,7 @@
   line-height: 1.7;
   text-align: center;
   font-size: 1rem;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 .review-author {
@@ -299,7 +299,7 @@
   text-align: center;
   color: #3a3a3a;
   margin: 0;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   letter-spacing: 0.02em;
 }
 
@@ -320,7 +320,7 @@
   text-align: center;
   margin-bottom: 2rem;
   color: #5a5a5a;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   line-height: 1.6;
 }
 
@@ -353,7 +353,7 @@
   margin-top: 1.5rem;
   color: #5a5a5a;
   font-style: italic;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 /* Call to Action Section */
@@ -367,7 +367,7 @@
   font-size: 2rem;
   font-weight: 400;
   margin-bottom: 1rem;
-  font-family: 'Cormorant Garamond', 'Palatino', 'Palatino Linotype', serif;
+  font-family: "Cormorant Garamond", "Palatino", "Palatino Linotype", serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: rgba(74, 85, 48, 1);
@@ -381,7 +381,7 @@
   margin-left: auto;
   margin-right: auto;
   line-height: 1.7;
-  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-family: "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-weight: 300;
   color: #5a5a5a;
 }
@@ -398,7 +398,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: none;
   cursor: pointer;
-  font-family: 'Cormorant Garamond', 'Palatino', serif;
+  font-family: "Cormorant Garamond", "Palatino", serif;
   letter-spacing: 0.05em;
 }
 
