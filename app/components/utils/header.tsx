@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import "./header.css";
-import logo from "../../img/logo_t.png";
+import logo from "../../../src/img/logos/logo_t.png";
 import HeaderAccount from "./headerAccount";
 import CartPopup from "../cartPopup/CartPopup";
 import { useCart } from "../../context/cartContext/cartContext";
