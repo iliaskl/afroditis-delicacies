@@ -52,7 +52,7 @@ function timeToMinutes(time: string): number {
 // Is a slot within ±60 minutes of any booked time?
 function isWithinBuffer(slot: string, times: string[]): boolean {
   const slotMins = timeToMinutes(slot);
-  return times.some((t) => Math.abs(slotMins - timeToMinutes(t)) < 60);
+  return times.some((t) => Math.abs(slotMins - timeToMinutes(t)) <= 30);
 }
 
 function dateKey(date: Date): string {
@@ -510,7 +510,7 @@ export default function Checkout() {
     }
 
     const { booked } = await getBookedTimesForDate(selectedDate);
-    if (isWithinBuffer(selectedTime, booked)) {
+    if (booked.includes(selectedTime)) {
       setSubmitError(
         "This time slot was just taken. Please choose a different time.",
       );
@@ -863,7 +863,12 @@ export default function Checkout() {
                     className={`payment-option ${paymentMethod === "paypal" ? "selected" : ""}`}
                     onClick={() => setPaymentMethod("paypal")}
                   >
-                    <span className="payment-option-icon"><img src="./../../public/img/payment/paypal.png" alt="PayPal" /></span>
+                    <span className="payment-option-icon">
+                      <img
+                        src="./../../public/img/payment/paypal.png"
+                        alt="PayPal"
+                      />
+                    </span>
                     <span>PayPal</span>
                     {paymentMethod === "paypal" && (
                       <a
@@ -882,7 +887,12 @@ export default function Checkout() {
                     className={`payment-option ${paymentMethod === "venmo" ? "selected" : ""}`}
                     onClick={() => setPaymentMethod("venmo")}
                   >
-                    <span className="payment-option-icon"><img src="./../../public/img/payment/venmo.png" alt="Venmo" /></span>
+                    <span className="payment-option-icon">
+                      <img
+                        src="./../../public/img/payment/venmo.png"
+                        alt="Venmo"
+                      />
+                    </span>
                     <span>Venmo</span>
                     {paymentMethod === "venmo" && (
                       <a
@@ -901,7 +911,12 @@ export default function Checkout() {
                     className={`payment-option ${paymentMethod === "pay_on_delivery" ? "selected" : ""}`}
                     onClick={() => setPaymentMethod("pay_on_delivery")}
                   >
-                    <span className="payment-option-icon"><img src="./../../public/img/payment/money.png" alt="Cash on Delivery" /></span>
+                    <span className="payment-option-icon">
+                      <img
+                        src="./../../public/img/payment/money.png"
+                        alt="Cash on Delivery"
+                      />
+                    </span>
                     <span>Cash or Check on Delivery</span>
                   </button>
                 </div>

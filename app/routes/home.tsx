@@ -252,7 +252,6 @@ export default function Home() {
               {/* Video Embed Container */}
               <div className="video-embed-container">
                 <div className="video-aspect-ratio">
-
                   <video className="video-iframe" controls>
                     <source src="/videos/feature_vid.mp4" type="video/mp4" />
                   </video>

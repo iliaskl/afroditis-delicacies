@@ -53,9 +53,9 @@ function emailWrapper(content: string): string {
           <!-- Footer -->
           <tr>
             <td style="background:${BRAND.bg};border-top:1px solid ${BRAND.lightBorder};padding:24px 40px;text-align:center;">
-              <p style="margin:0 0 4px 0;font-size:13px;color:#7a8060;font-family:Georgia,serif;">Questions? Reply to this email or reach us at</p>
+              <p style="margin:0 0 4px 0;font-size:13px;color:#7a8060;font-family:Georgia,serif;">Questions? Reach us at</p>
               <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};font-size:13px;text-decoration:none;font-family:Georgia,serif;">info@afroditisdelicacies.com</a>
-              <p style="margin:16px 0 0 0;font-size:11px;color:#aaa;font-family:Georgia,serif;">© ${new Date().getFullYear()} Afroditi's Delicacies · Seattle, WA</p>
+              <p style="margin:16px 0 0 0;font-size:11px;color:#aaa;font-family:Georgia,serif;">© ${new Date().getFullYear()} Afroditi's Delicacies · Bothell, WA</p>
             </td>
           </tr>
 
@@ -173,6 +173,10 @@ function formatPaymentLabel(method: string): string {
   return method;
 }
 
+function firstName(fullName: string): string {
+  return fullName.split(" ")[0];
+}
+
 // ─── Email Service Class ────────────────────────────────────────────────────
 
 class EmailService {
@@ -203,7 +207,7 @@ class EmailService {
     try {
       const content = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Order Received!</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${order.customerName}, we've got your order and it's currently pending approval. We'll send you a confirmation once it's been reviewed.</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we've got your order and it's currently pending approval. We'll send you a confirmation once it's been reviewed.</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -306,6 +310,10 @@ class EmailService {
         ])}
 
         ${alertBox(BRAND.gold, "#fdf9e8", `<strong>Action Required:</strong> Log in to the website to approve or decline this order.`)}
+
+        <div style="text-align:center;margin-top:24px;">
+          <a href="https://www.afroditisdelicacies.com/orders" style="display:inline-block;background-color:${BRAND.darkGreen};color:#ffffff;font-family:Georgia,serif;font-size:15px;text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:0.5px;">View Order Dashboard</a>
+        </div>
       `;
 
       const adminsSnap = await getDocs(
@@ -339,8 +347,8 @@ class EmailService {
   async sendOrderApprovedToCustomer(order: Order): Promise<void> {
     try {
       const content = `
-        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Your Order is Confirmed! 🎉</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${order.customerName}, great news — your order has been approved and we're getting to work in the kitchen!</p>
+        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Your Order is Confirmed!</h2>
+        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, great news — your order has been approved and we're getting to work in the kitchen!</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -403,7 +411,7 @@ class EmailService {
 
       const content = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:#c75146;font-family:Georgia,serif;">Order Unable to be Fulfilled</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${order.customerName}, we're sorry — unfortunately we're unable to fulfill your order at this time.</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we're sorry — unfortunately we're unable to fulfill your order at this time.</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
