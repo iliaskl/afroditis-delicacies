@@ -19,7 +19,7 @@ export default async function handler(req: any, res: any) {
       to,
       subject,
       html,
-      replyTo: replyTo || "iliaskladakis@outlook.com",
+      replyTo: replyTo || "info@afroditisdelicacies.com",
     });
 
     return res.status(200).json({ success: true, data });
