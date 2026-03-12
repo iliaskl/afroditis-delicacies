@@ -39,7 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
       to,
       subject,
       html,
-      replyTo: replyTo || "iliaskladakis@outlook.com",
+      replyTo: replyTo || "info@afroditisdelicacies.com",
     });
 
     console.log("[send-email] Sent successfully:", data);
