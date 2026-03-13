@@ -43,13 +43,11 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     login,
     loginWithGoogle,
     logout,
-    resendVerification,
     updateProfile,
     changeEmail,
     changePassword,
     getOrders,
   } = useAuth();
-
   const isAdmin = user && userProfile?.role === "admin";
 
   const [isLogin, setIsLogin] = useState(true);
@@ -303,9 +301,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
           password: formData.password,
           phoneNumber: formData.phoneNumber,
         });
-        setSuccess(
-          "Account created! Please check your email to verify your account.",
-        );
+        setSuccess("Account created successfully! You can now sign in.");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred. Please try again.");
@@ -329,23 +325,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       if (err.message !== "Sign-in cancelled") {
         setError(err.message || "Failed to sign in with Google");
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await resendVerification();
-      setSuccess("Verification email sent! Please check your inbox.");
-    } catch (err: any) {
-      setError(err.message || "Failed to send verification email.");
     } finally {
       setLoading(false);
     }
@@ -536,19 +515,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               <div className="user-info">
                 <h3>Welcome, {userProfile?.firstName || user.displayName}!</h3>
                 <p className="user-email">{user.email}</p>
-
-                {!user.emailVerified && (
-                  <div className="verification-banner">
-                    <p>⚠️ Please verify your email address</p>
-                    <button
-                      onClick={handleResendVerification}
-                      disabled={loading}
-                      className="resend-button"
-                    >
-                      {loading ? "Sending..." : "Resend Verification Email"}
-                    </button>
-                  </div>
-                )}
 
                 {error &&
                   !error.toLowerCase().includes("permission") &&

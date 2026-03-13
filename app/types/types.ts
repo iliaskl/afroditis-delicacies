@@ -6,13 +6,10 @@ export interface UserProfile {
   lastName: string;
   displayName: string;
   phoneNumber?: string;
-  emailVerified: boolean;
   role: string;
   photoURL?: string;
   createdAt: Date;
   updatedAt: Date;
-
-  // Address information
   address?: {
     street: string;
     city: string;
@@ -20,11 +17,7 @@ export interface UserProfile {
     zipCode: string;
     country: string;
   };
-
-  // Account status
-  accountStatus: "active" | "suspended" | "pending_verification";
-
-  // Preferences
+  accountStatus: "active" | "suspended";
   preferences?: {
     emailNotifications: boolean;
     orderUpdates: boolean;
