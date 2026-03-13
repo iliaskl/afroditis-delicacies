@@ -8,14 +8,17 @@ import {
   signInWithGoogle,
   logoutUser,
   resetPassword,
-  resendVerificationEmail,
   getUserProfile,
   updateUserProfile,
   updateUserEmail,
   updateUserPassword,
-  getUserOrders
+  getUserOrders,
 } from "../../services/authService";
-import type { UserProfile, OrderHistory, AuthFormData } from "../../types/types";
+import type {
+  UserProfile,
+  OrderHistory,
+  AuthFormData,
+} from "../../types/types";
 
 interface AuthContextType {
   // Auth state
@@ -29,7 +32,6 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
-  resendVerification: () => Promise<void>;
 
   // Profile functions
   refreshProfile: () => Promise<void>;
@@ -59,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const profile = await getUserProfile(firebaseUser.uid);
           setUserProfile(profile);
         } catch (error) {
-          console.error('Failed to load user profile:', error);
+          console.error("Failed to load user profile:", error);
         }
       } else {
         setUserProfile(null);
@@ -120,18 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Resend email verification
-  async function resendVerification(): Promise<void> {
-    if (!user) {
-      throw new Error('No user signed in');
-    }
-    try {
-      await resendVerificationEmail(user);
-    } catch (error) {
-      throw error;
-    }
-  }
-
   // Refresh user profile from Firestore
   async function refreshProfile(): Promise<void> {
     if (!user) return;
@@ -147,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Update user profile
   async function updateProfile(updates: Partial<UserProfile>): Promise<void> {
     if (!user) {
-      throw new Error('No user signed in');
+      throw new Error("No user signed in");
     }
 
     try {
@@ -181,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Get user orders
   async function getOrders(): Promise<OrderHistory[]> {
     if (!user) {
-      throw new Error('No user signed in');
+      throw new Error("No user signed in");
     }
 
     try {
@@ -200,12 +190,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loginWithGoogle,
     logout,
     sendPasswordReset,
-    resendVerification,
     refreshProfile,
     updateProfile,
     changeEmail,
     changePassword,
-    getOrders
+    getOrders,
   };
 
   return (
