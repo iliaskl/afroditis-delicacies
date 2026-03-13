@@ -13,6 +13,7 @@ import {
   updateUserEmail,
   updateUserPassword,
   getUserOrders,
+  deleteUserAccount,
 } from "../../services/authService";
 import type {
   UserProfile,
@@ -41,6 +42,9 @@ interface AuthContextType {
 
   // Order functions
   getOrders: () => Promise<OrderHistory[]>;
+
+  // Account management
+  deleteAccount: (password?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -181,6 +185,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Delete user account
+  async function deleteAccount(password?: string): Promise<void> {
+    if (!user) {
+      throw new Error("No user signed in");
+    }
+    try {
+      await deleteUserAccount(user, password);
+      setUser(null);
+      setUserProfile(null);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   const value: AuthContextType = {
     user,
     userProfile,
@@ -195,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     changeEmail,
     changePassword,
     getOrders,
+    deleteAccount,
   };
 
   return (
