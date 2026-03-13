@@ -1589,3 +1589,110 @@ body.modal-open {
   color: #4a5530;
   text-align: right;
 }
+
+/* Danger Zone */
+.danger-zone {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.delete-account-button {
+  background: none;
+  border: none;
+  color: #999;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.delete-account-button:hover {
+  color: #c62828;
+}
+
+.delete-confirm-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background-color: #fff5f5;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+}
+
+.delete-confirm-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c62828;
+  margin: 0;
+}
+
+.delete-confirm-description {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.95rem;
+  color: #555;
+  margin: 0;
+}
+
+.delete-confirm-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ffcdd2;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: "Cormorant Garamond", serif;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+.delete-confirm-input:focus {
+  outline: none;
+  border-color: #c62828;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.delete-cancel-button {
+  padding: 0.6rem 1.25rem;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.delete-cancel-button:hover {
+  background-color: #f5f5f5;
+}
+
+.delete-confirm-button {
+  padding: 0.6rem 1.25rem;
+  background-color: #c62828;
+  border: none;
+  border-radius: 4px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.delete-confirm-button:hover:not(:disabled) {
+  background-color: #b71c1c;
+}
+
+.delete-confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

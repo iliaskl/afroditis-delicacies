@@ -47,10 +47,16 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     changeEmail,
     changePassword,
     getOrders,
+    deleteAccount,
   } = useAuth();
   const isAdmin = user && userProfile?.role === "admin";
+  const isGoogleUser = user?.providerData?.some(
+    (p) => p.providerId === "google.com",
+  );
 
   const [isLogin, setIsLogin] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -414,6 +420,22 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to logout.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!isGoogleUser && deleteConfirmText.length === 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await deleteAccount(isGoogleUser ? undefined : deleteConfirmText);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete account.");
+      setShowDeleteConfirm(false);
+      setDeleteConfirmText("");
     } finally {
       setLoading(false);
     }
@@ -1427,6 +1449,66 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                   >
                     {loading ? "Saving Changes..." : "Save Changes"}
                   </button>
+                  {/* Danger Zone */}
+                  <div className="danger-zone">
+                    {!showDeleteConfirm ? (
+                      <button
+                        type="button"
+                        className="delete-account-button"
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        Delete Account
+                      </button>
+                    ) : (
+                      <div className="delete-confirm-box">
+                        <p className="delete-confirm-title">
+                          ⚠️ This cannot be undone
+                        </p>
+                        <p className="delete-confirm-description">
+                          Your account will be permanently deleted. Past orders
+                          will be anonymized.{" "}
+                          {isGoogleUser
+                            ? "Click confirm and you will be asked to sign in with Google to verify."
+                            : "Enter your password to confirm."}
+                        </p>
+                        {!isGoogleUser && (
+                          <input
+                            type="password"
+                            className="delete-confirm-input"
+                            placeholder="Enter your password"
+                            value={deleteConfirmText}
+                            onChange={(e) =>
+                              setDeleteConfirmText(e.target.value)
+                            }
+                          />
+                        )}
+                        <div className="delete-confirm-actions">
+                          <button
+                            type="button"
+                            className="delete-cancel-button"
+                            onClick={() => {
+                              setShowDeleteConfirm(false);
+                              setDeleteConfirmText("");
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="delete-confirm-button"
+                            onClick={handleDeleteAccount}
+                            disabled={
+                              (!isGoogleUser &&
+                                deleteConfirmText.length === 0) ||
+                              loading
+                            }
+                          >
+                            {loading ? "Deleting..." : "Delete My Account"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </form>
               </div>
             )}

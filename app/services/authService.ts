@@ -8,6 +8,9 @@ import {
   updateProfile,
   updateEmail,
   updatePassword,
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   type User,
   type AuthError,
 } from "firebase/auth";
@@ -16,6 +19,7 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  deleteDoc,
   collection,
   query,
   where,
@@ -428,6 +432,68 @@ export async function checkEmailExists(email: string): Promise<boolean> {
   } catch (error) {
     console.error("Check email error:", error);
     return false;
+  }
+}
+
+export async function deleteUserAccount(
+  user: User,
+  password?: string,
+): Promise<void> {
+  try {
+    const uid = user.uid;
+
+    // Reauthenticate before deletion (Firebase requires recent login)
+    const providerData = user.providerData;
+    const isGoogleUser = providerData.some(
+      (p) => p.providerId === "google.com",
+    );
+
+    if (isGoogleUser) {
+      // Reauthenticate Google user via popup
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (!credential) throw new Error("Failed to get Google credential.");
+      await reauthenticateWithCredential(user, credential);
+    } else {
+      // Reauthenticate email/password user
+      if (!password)
+        throw new Error("Password is required to delete your account.");
+      const credential = EmailAuthProvider.credential(user.email!, password);
+      await reauthenticateWithCredential(user, credential);
+    }
+
+    // Anonymize all orders belonging to this user
+    const ordersRef = collection(db, "orders");
+    const q = query(ordersRef, where("userId", "==", uid));
+    const orderSnapshot = await getDocs(q);
+
+    const anonymizePromises = orderSnapshot.docs.map((orderDoc) =>
+      updateDoc(orderDoc.ref, {
+        userId: "deleted_user",
+        customerName: "Deleted User",
+        customerEmail: "deleted@deleted.com",
+        customerPhone: "",
+      }),
+    );
+    await Promise.all(anonymizePromises);
+
+    // Delete Firestore user profile
+    await deleteDoc(doc(db, "users", uid));
+
+    // Delete Firebase Auth account
+    await deleteUser(user);
+  } catch (error: any) {
+    console.error("Delete account error:", error);
+    if (
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/invalid-credential"
+    ) {
+      throw new Error("Incorrect password. Please try again.");
+    }
+    throw new Error(
+      error.message || "Failed to delete account. Please try again.",
+    );
   }
 }
 
