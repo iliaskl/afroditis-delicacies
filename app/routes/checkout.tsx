@@ -10,6 +10,9 @@ import {
   placeOrder,
   getBookedTimesForDate,
   subscribeToBlockedDays,
+  ALL_TIME_SLOTS,
+  timeToMinutes,
+  dateKey,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
 import { addressService } from "../services/addressService";
@@ -23,41 +26,6 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const BOTHELL_LAT = 47.7623;
 const BOTHELL_LNG = -122.2054;
 const MAX_DELIVERY_MILES = 50;
-
-// Time slots: 10am–10pm in 30-min increments
-function generateTimeSlots(): string[] {
-  const slots: string[] = [];
-  for (let h = 10; h < 22; h++) {
-    const ampm = h < 12 ? "AM" : "PM";
-    const hour = h <= 12 ? h : h - 12;
-    slots.push(`${hour}:00 ${ampm}`);
-    slots.push(`${hour}:30 ${ampm}`);
-  }
-  slots.push("10:00 PM");
-  return slots;
-}
-
-const ALL_TIME_SLOTS = generateTimeSlots();
-
-// Convert "2:30 PM" → minutes since midnight for comparison
-function timeToMinutes(time: string): number {
-  const [timePart, ampm] = time.split(" ");
-  const [h, m] = timePart.split(":").map(Number);
-  let hours = h;
-  if (ampm === "PM" && h !== 12) hours += 12;
-  if (ampm === "AM" && h === 12) hours = 0;
-  return hours * 60 + m;
-}
-
-// Is a slot within ±60 minutes of any booked time?
-function isWithinBuffer(slot: string, times: string[]): boolean {
-  const slotMins = timeToMinutes(slot);
-  return times.some((t) => Math.abs(slotMins - timeToMinutes(t)) <= 30);
-}
-
-function dateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 // Haversine distance in miles between two lat/lng points
 function distanceMiles(
@@ -167,34 +135,6 @@ function getEarliestSlotMinutes(
   return 0;
 }
 
-/**
- * For the earliest selectable date, return the minimum delivery time in
- * minutes-since-midnight that satisfies the lead-time requirement.
- * For all later dates this returns 0 (any time is fine).
- */
-function getEarliestTimeMinutes(
-  totalItems: number,
-  selectedDate: Date,
-): number {
-  const now = new Date();
-  let hoursToAdd = 24;
-  if (totalItems >= 4 && totalItems <= 6) hoursToAdd = 72;
-  if (totalItems >= 7) hoursToAdd = 120;
-
-  const earliestMoment = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
-
-  // Is the selected date the same calendar day as the earliest allowed moment?
-  const sel = new Date(selectedDate);
-  sel.setHours(0, 0, 0, 0);
-  const earliestDay = new Date(earliestMoment);
-  earliestDay.setHours(0, 0, 0, 0);
-
-  if (sel.getTime() === earliestDay.getTime()) {
-    return earliestMoment.getHours() * 60 + earliestMoment.getMinutes();
-  }
-  return 0;
-}
-
 // Build a calendar grid for a given month
 function buildCalendarDays(year: number, month: number): (Date | null)[] {
   const firstDay = new Date(year, month, 1).getDay();
@@ -227,7 +167,7 @@ export default function Checkout() {
   const profile = useUserProfile();
   const { cartItems, cartTotal, clearCart } = useCart();
 
-  // ── Redirect if not logged in or cart is empty ──
+  // ── Redirect if not logged in ──
   useEffect(() => {
     if (!user) {
       navigate("/");
@@ -818,33 +758,28 @@ export default function Checkout() {
                     {timesLoading ? (
                       <p className="times-loading">Loading available times…</p>
                     ) : (
-                      <>
-                        <div className="time-slots-grid">
-                          {ALL_TIME_SLOTS.map((slot) => {
-                            const slotMins = timeToMinutes(slot);
-                            const minMins = selectedDate
-                              ? getEarliestSlotMinutes(totalItems, selectedDate)
-                              : 0;
-                            const tooEarly = minMins > 0 && slotMins <= minMins;
-                            const blocked =
-                              tooEarly || bookedTimes.includes(slot);
-                            const isSelected =
-                              !blocked && selectedTime === slot;
-                            return (
-                              <button
-                                key={slot}
-                                className={`time-slot ${blocked ? "blocked" : "open"} ${isSelected ? "selected" : ""}`}
-                                onClick={() =>
-                                  !blocked && handleTimeSelect(slot)
-                                }
-                                disabled={blocked}
-                              >
-                                {slot}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </>
+                      <div className="time-slots-grid">
+                        {ALL_TIME_SLOTS.map((slot) => {
+                          const slotMins = timeToMinutes(slot);
+                          const minMins = selectedDate
+                            ? getEarliestSlotMinutes(totalItems, selectedDate)
+                            : 0;
+                          const tooEarly = minMins > 0 && slotMins <= minMins;
+                          const blocked =
+                            tooEarly || bookedTimes.includes(slot);
+                          const isSelected = !blocked && selectedTime === slot;
+                          return (
+                            <button
+                              key={slot}
+                              className={`time-slot ${blocked ? "blocked" : "open"} ${isSelected ? "selected" : ""}`}
+                              onClick={() => !blocked && handleTimeSelect(slot)}
+                              disabled={blocked}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 )}
@@ -870,17 +805,15 @@ export default function Checkout() {
                       />
                     </span>
                     <span>PayPal</span>
-                    {paymentMethod === "paypal" && (
-                      <a
-                        href="https://paypal.me/AfroditiSDeli"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="payment-link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Pay Now →
-                      </a>
-                    )}
+                    <a
+                      href="https://paypal.me/afroditisdelicacies"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="payment-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Send →
+                    </a>
                   </button>
 
                   <button
@@ -894,17 +827,15 @@ export default function Checkout() {
                       />
                     </span>
                     <span>Venmo</span>
-                    {paymentMethod === "venmo" && (
-                      <a
-                        href="https://venmo.com/Afroditi-Kritikou"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="payment-link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Pay Now →
-                      </a>
-                    )}
+                    <a
+                      href="https://venmo.com/afroditisdelicacies"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="payment-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Send →
+                    </a>
                   </button>
 
                   <button

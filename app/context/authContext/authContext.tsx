@@ -12,14 +12,9 @@ import {
   updateUserProfile,
   updateUserEmail,
   updateUserPassword,
-  getUserOrders,
   deleteUserAccount,
 } from "../../services/authService";
-import type {
-  UserProfile,
-  OrderHistory,
-  AuthFormData,
-} from "../../types/types";
+import type { UserProfile, AuthFormData } from "../../types/types";
 
 interface AuthContextType {
   // Auth state
@@ -39,9 +34,6 @@ interface AuthContextType {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   changeEmail: (newEmail: string) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
-
-  // Order functions
-  getOrders: () => Promise<OrderHistory[]>;
 
   // Account management
   deleteAccount: (password?: string) => Promise<void>;
@@ -172,19 +164,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Get user orders
-  async function getOrders(): Promise<OrderHistory[]> {
-    if (!user) {
-      throw new Error("No user signed in");
-    }
-
-    try {
-      return await getUserOrders(user.uid);
-    } catch (error) {
-      throw error;
-    }
-  }
-
   // Delete user account
   async function deleteAccount(password?: string): Promise<void> {
     if (!user) {
@@ -212,7 +191,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateProfile,
     changeEmail,
     changePassword,
-    getOrders,
     deleteAccount,
   };
 

@@ -28,7 +28,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
-import type { UserProfile, OrderHistory, AuthFormData } from "../types/types";
+import type { UserProfile, AuthFormData } from "../types/types";
 import { emailService } from "./emailService";
 
 /**
@@ -143,13 +143,7 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       phoneNumber: formData.phoneNumber,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-      accountStatus: "active",
       role: "customer",
-      preferences: {
-        emailNotifications: true,
-        orderUpdates: true,
-        marketingEmails: false,
-      },
     };
 
     // Save to Firestore
@@ -186,19 +180,8 @@ export async function signInWithGoogle(): Promise<User> {
         displayName: user.displayName || "",
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        accountStatus: "active",
         role: "customer",
-        preferences: {
-          emailNotifications: true,
-          orderUpdates: true,
-          marketingEmails: false,
-        },
       };
-
-      // Only add photoURL if it exists
-      if (user.photoURL) {
-        userProfileData.photoURL = user.photoURL;
-      }
 
       // Note: Google sign-in users will need to add phone number later
       await setDoc(doc(db, "users", user.uid), userProfileData);
@@ -269,8 +252,20 @@ export async function logoutUser(): Promise<void> {
  */
 export async function resetPassword(email: string): Promise<void> {
   try {
+    // Check if the email has an associated account before sending
+    const exists = await checkEmailExists(email);
+    if (!exists) {
+      throw new Error(
+        "No account found with this email address. Please check or sign up.",
+      );
+    }
+
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
+    // Re-throw our custom errors directly
+    if (error instanceof Error && !(error as any).code) {
+      throw error;
+    }
     const authError = error as AuthError;
     console.error("Password reset error:", authError);
     throw new Error(getAuthErrorMessage(authError));
@@ -393,33 +388,6 @@ export async function updateUserPassword(newPassword: string): Promise<void> {
 }
 
 /**
- * Get user order history
- */
-export async function getUserOrders(uid: string): Promise<OrderHistory[]> {
-  try {
-    const ordersRef = collection(db, "orders");
-    const q = query(
-      ordersRef,
-      where("userId", "==", uid),
-      orderBy("orderDate", "desc"),
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        orderDate: data.orderDate.toDate(),
-        deliveryDate: data.deliveryDate.toDate(),
-      } as OrderHistory;
-    });
-  } catch (error) {
-    console.error("Get user orders error:", error);
-    throw new Error("Failed to fetch order history.");
-  }
-}
-
-/**
  * Check if email is already registered
  */
 export async function checkEmailExists(email: string): Promise<boolean> {
@@ -463,21 +431,6 @@ export async function deleteUserAccount(
       await reauthenticateWithCredential(user, credential);
     }
 
-    // Anonymize all orders belonging to this user
-    const ordersRef = collection(db, "orders");
-    const q = query(ordersRef, where("userId", "==", uid));
-    const orderSnapshot = await getDocs(q);
-
-    const anonymizePromises = orderSnapshot.docs.map((orderDoc) =>
-      updateDoc(orderDoc.ref, {
-        userId: "deleted_user",
-        customerName: "Deleted User",
-        customerEmail: "deleted@deleted.com",
-        customerPhone: "",
-      }),
-    );
-    await Promise.all(anonymizePromises);
-
     // Delete Firestore user profile
     await deleteDoc(doc(db, "users", uid));
 
@@ -515,10 +468,10 @@ function getAuthErrorMessage(error: AuthError): string {
       return "Password is too weak. Please use at least 6 characters with uppercase, number, and special character.";
     case "auth/user-disabled":
       return "This account has been disabled. Please contact support.";
+    case "auth/invalid-credential":
     case "auth/user-not-found":
-      return "No account found with this email. Please check or sign up.";
     case "auth/wrong-password":
-      return "Incorrect password. Please try again.";
+      return "The email or password is incorrect. Please try again.";
     case "auth/too-many-requests":
       return "Too many failed attempts. Please try again later.";
     case "auth/network-request-failed":

@@ -7,7 +7,6 @@ export interface UserProfile {
   displayName: string;
   phoneNumber?: string;
   role: string;
-  photoURL?: string;
   createdAt: Date;
   updatedAt: Date;
   address?: {
@@ -16,12 +15,6 @@ export interface UserProfile {
     state: string;
     zipCode: string;
     country: string;
-  };
-  accountStatus: "active" | "suspended";
-  preferences?: {
-    emailNotifications: boolean;
-    orderUpdates: boolean;
-    marketingEmails: boolean;
   };
 }
 
@@ -73,38 +66,6 @@ export interface Order {
   adminNotes?: string; // Optional notes from admin (e.g. reason for decline)
   isNewForAdmin: boolean; // True until admin first views / acts on the order
   updatedAt: Date;
-}
-
-// Kept for backwards compatibility with authService.getUserOrders
-// New code should use Order instead
-export interface OrderHistory {
-  orderId: string;
-  userId: string;
-  items: Array<{
-    itemId: string;
-    name: string;
-    quantity: number;
-    size?: string;
-    price: number;
-  }>;
-  totalAmount: number;
-  status:
-    | "pending"
-    | "confirmed"
-    | "preparing"
-    | "out_for_delivery"
-    | "delivered"
-    | "cancelled";
-  orderDate: Date;
-  deliveryDate: Date;
-  deliveryAddress: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  paymentMethod: "cash" | "check" | "venmo" | "paypal";
-  specialInstructions?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
