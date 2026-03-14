@@ -49,20 +49,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   useEffect(() => {
     if (mapboxToken) {
       addressService.initialize(mapboxToken);
-    }
-  }, [mapboxToken]);
-
-  useEffect(() => {
-    if (mapboxToken) {
-      addressService.initialize(mapboxToken);
     } else {
       console.error(
         "❌ Mapbox token is missing! Check VITE_MAPBOX_TOKEN in .env",
       );
     }
   }, [mapboxToken]);
-
-  // VITE_MAPBOX_TOKEN=pk.eyJ1IjoiY...your_actual_token_here
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

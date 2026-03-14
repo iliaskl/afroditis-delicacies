@@ -11,8 +11,8 @@ import tritipImage from "../../src/img/carousel/tritip.jpg";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Afroditi's Delicacies" },
+    { name: "description", content: "Welcome to Afroditi's Delicacies!" },
   ];
 }
 
@@ -253,7 +253,10 @@ export default function Home() {
               <div className="video-embed-container">
                 <div className="video-aspect-ratio">
                   <video className="video-iframe" controls>
-                    <source src="../../src/videos/feature_vid.mp4" type="video/mp4" />
+                    <source
+                      src="../../src/videos/feature_vid.mp4"
+                      type="video/mp4"
+                    />
                   </video>
                 </div>
               </div>

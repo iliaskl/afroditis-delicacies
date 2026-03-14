@@ -333,18 +333,12 @@ async function removeBookedSlotsForDecline(
 /**
  * Approve an order:
  *  1. Set status → "active"
- *  2. Persist the delivery slot + its ±30-min buffer as blocked
- *  3. Auto-block the whole week if this fills the weekly cap
+ *
+ * Note: time slot blocking happens at placeOrder time, not here.
+ * Slots remain blocked until the order is declined or delivered.
  */
 export async function approveOrder(orderId: string): Promise<void> {
   try {
-    const orderSnap = await getDoc(doc(db, "orders", orderId));
-    if (!orderSnap.exists()) throw new Error("Order not found.");
-    const data = orderSnap.data();
-    const deliveryDate: Date =
-      data.deliveryDate?.toDate?.() ?? new Date(data.deliveryDate);
-    const deliveryTime: string = data.deliveryTime;
-
     await updateDoc(doc(db, "orders", orderId), {
       status: "active",
       isNewForAdmin: false,
