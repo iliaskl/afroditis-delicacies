@@ -132,10 +132,6 @@ export async function updateCategoryName(
 
     // 3. Commit all updates in a single batch
     await batch.commit();
-
-    console.log(
-      `Successfully updated category "${oldName}" to "${newName}" and ${itemsSnapshot.size} menu items`,
-    );
   } catch (error) {
     console.error("Error updating category name:", error);
     throw new Error("Failed to update category name");
@@ -179,10 +175,6 @@ export async function deleteCategory(categoryName: string): Promise<void> {
 
     // 3. Commit all deletions in a single batch
     await batch.commit();
-
-    console.log(
-      `Successfully deleted category "${categoryName}" and ${itemsSnapshot.size} menu items`,
-    );
   } catch (error) {
     console.error("Error deleting category:", error);
     throw new Error("Failed to delete category");
@@ -232,10 +224,6 @@ export async function addDish(dishData: {
     };
 
     await addDoc(menuItemsRef, newDish);
-
-    console.log(
-      `Successfully added dish "${dishData.name}" to category "${dishData.category}"`,
-    );
   } catch (error) {
     console.error("Error adding dish:", error);
     throw new Error("Failed to add dish");
@@ -272,8 +260,6 @@ export async function addCategory(categoryData: {
     };
 
     await addDoc(categoriesRef, newCategory);
-
-    console.log(`Successfully added category "${categoryData.name}"`);
   } catch (error) {
     console.error("Error adding category:", error);
     throw new Error("Failed to add category");
@@ -303,8 +289,6 @@ export async function updateDish(
       available: dishData.available,
       imgPath: dishData.imgPath || "",
     });
-
-    console.log(`Successfully updated dish "${dishData.name}"`);
   } catch (error) {
     console.error("Error updating dish:", error);
     throw new Error("Failed to update dish");
@@ -318,8 +302,6 @@ export async function deleteDish(dishId: string): Promise<void> {
   try {
     const dishDocRef = doc(db, "menuItems", dishId);
     await deleteDoc(dishDocRef);
-
-    console.log(`Successfully deleted dish with ID "${dishId}"`);
   } catch (error) {
     console.error("Error deleting dish:", error);
     throw new Error("Failed to delete dish");
@@ -344,8 +326,6 @@ export async function reorderDishes(
     });
 
     await batch.commit();
-
-    console.log(`Successfully reordered ${dishUpdates.length} dishes`);
   } catch (error) {
     console.error("Error reordering dishes:", error);
     throw new Error("Failed to reorder dishes");

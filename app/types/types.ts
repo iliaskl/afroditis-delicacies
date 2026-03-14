@@ -7,7 +7,6 @@ export interface UserProfile {
   displayName: string;
   phoneNumber?: string;
   role: string;
-  photoURL?: string;
   createdAt: Date;
   updatedAt: Date;
   address?: {
@@ -16,12 +15,6 @@ export interface UserProfile {
     state: string;
     zipCode: string;
     country: string;
-  };
-  accountStatus: "active" | "suspended";
-  preferences?: {
-    emailNotifications: boolean;
-    orderUpdates: boolean;
-    marketingEmails: boolean;
   };
 }
 

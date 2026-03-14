@@ -42,7 +42,6 @@ export async function action({ request }: ActionFunctionArgs) {
       replyTo: replyTo || "info@afroditisdelicacies.com",
     });
 
-    console.log("[send-email] Sent successfully:", data);
     return Response.json({ success: true, data });
   } catch (error) {
     console.error("[send-email] Resend error:", error);

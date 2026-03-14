@@ -143,13 +143,7 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       phoneNumber: formData.phoneNumber,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-      accountStatus: "active",
       role: "customer",
-      preferences: {
-        emailNotifications: true,
-        orderUpdates: true,
-        marketingEmails: false,
-      },
     };
 
     // Save to Firestore
@@ -186,19 +180,8 @@ export async function signInWithGoogle(): Promise<User> {
         displayName: user.displayName || "",
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        accountStatus: "active",
         role: "customer",
-        preferences: {
-          emailNotifications: true,
-          orderUpdates: true,
-          marketingEmails: false,
-        },
       };
-
-      // Only add photoURL if it exists
-      if (user.photoURL) {
-        userProfileData.photoURL = user.photoURL;
-      }
 
       // Note: Google sign-in users will need to add phone number later
       await setDoc(doc(db, "users", user.uid), userProfileData);

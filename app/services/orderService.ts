@@ -60,7 +60,7 @@ export function dateKey(date: Date): string {
 /**
  * Convert a time string like "2:30 PM" → minutes since midnight.
  */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const [timePart, ampm] = time.split(" ");
   const [h, m] = timePart.split(":").map(Number);
   let hours = h;
