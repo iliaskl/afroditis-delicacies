@@ -13,6 +13,7 @@ import {
   updateDish as updateDishService,
   deleteDish as deleteDishService,
   reorderDishes as reorderDishesService,
+  uploadDishImage,
 } from "../services/menuService";
 import { useEditMenu } from "../components/editMenu/editMenu";
 import type { MenuItem, MenuCategory } from "../types/types";
@@ -204,13 +205,18 @@ export default function Menu() {
     try {
       setIsSubmitting(true);
 
+      let imgPath = "";
+      if (dishImage) {
+        imgPath = await uploadDishImage(dishImage);
+      }
+
       await addDishService({
         name: dishName.trim(),
         category: categoryForNewDish,
         price: price,
         secondPrice: secondPrice,
         available: dishAvailable,
-        imgPath: "",
+        imgPath,
       });
 
       const data = await getMenuData();
@@ -281,12 +287,18 @@ export default function Menu() {
     try {
       setIsSubmitting(true);
 
+      // If a new image was selected, upload it — otherwise keep the existing URL
+      let imgPath = dishBeingEdited.imgPath || "";
+      if (dishImage) {
+        imgPath = await uploadDishImage(dishImage);
+      }
+
       await updateDishService(dishBeingEdited.id, {
         name: dishName.trim(),
         price: price,
         secondPrice: secondPrice,
         available: dishAvailable,
-        imgPath: dishImagePreview || "",
+        imgPath,
       });
 
       const data = await getMenuData();
@@ -915,9 +927,6 @@ export default function Menu() {
                       <img src={dishImagePreview} alt="Preview" />
                     </div>
                   )}
-                  <p className="image-note">
-                    Image upload will be implemented in a future update
-                  </p>
                 </div>
               </div>
 
@@ -1092,9 +1101,6 @@ export default function Menu() {
                       <img src={dishImagePreview} alt="Preview" />
                     </div>
                   )}
-                  <p className="image-note">
-                    Image upload will be implemented in a future update
-                  </p>
                 </div>
               </div>
 
