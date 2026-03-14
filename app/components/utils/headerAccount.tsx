@@ -33,7 +33,8 @@ type ProfileView =
   | "orderHistory"
   | "accountSettings"
   | "manageCalendar"
-  | "analytics";
+  | "analytics"
+  | "forgotPassword";
 
 const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
   const {
@@ -43,6 +44,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     login,
     loginWithGoogle,
     logout,
+    sendPasswordReset,
     updateProfile,
     changeEmail,
     changePassword,
@@ -57,6 +59,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +67,8 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
   const [currentView, setCurrentView] = useState<ProfileView>("main");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -342,7 +347,33 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     setSuccess(null);
     setLoading(true);
 
+    // Scroll modal content to top so user sees messages
+    const modalContent = document.querySelector(".auth-modal-content");
+    if (modalContent) modalContent.scrollTop = 0;
+
     try {
+      // Validate password fields before doing anything
+      if (settingsData.confirmPassword && !settingsData.newPassword) {
+        setError("Please enter a new password to go with your confirmation.");
+        setLoading(false);
+        return;
+      }
+
+      if (settingsData.newPassword && !settingsData.confirmPassword) {
+        setError("Please confirm your new password.");
+        setLoading(false);
+        return;
+      }
+
+      if (
+        settingsData.newPassword &&
+        settingsData.newPassword !== settingsData.confirmPassword
+      ) {
+        setError("Passwords do not match.");
+        setLoading(false);
+        return;
+      }
+
       const updates: any = {};
 
       if (
@@ -368,43 +399,46 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
         updates.phoneNumber = settingsData.phoneNumber;
       }
 
-      if (
-        settingsData.street ||
-        settingsData.city ||
-        settingsData.state ||
-        settingsData.zipCode
-      ) {
+      const addressChanged =
+        settingsData.street !== (userProfile?.address?.street || "") ||
+        settingsData.city !== (userProfile?.address?.city || "") ||
+        settingsData.state !== (userProfile?.address?.state || "") ||
+        settingsData.zipCode !== (userProfile?.address?.zipCode || "");
+
+      if (addressChanged) {
         updates.address = {
-          street: settingsData.street || userProfile?.address?.street || "",
-          city: settingsData.city || userProfile?.address?.city || "",
-          state: settingsData.state || userProfile?.address?.state || "",
-          zipCode: settingsData.zipCode || userProfile?.address?.zipCode || "",
+          street: settingsData.street || "",
+          city: settingsData.city || "",
+          state: settingsData.state || "",
+          zipCode: settingsData.zipCode || "",
           country: "USA",
         };
       }
 
+      let successMessage = "";
+
       if (Object.keys(updates).length > 0) {
         await updateProfile(updates);
-        setSuccess("Profile updated successfully!");
+        successMessage = "Profile updated successfully!";
       }
 
       if (settingsData.email && settingsData.email !== user?.email) {
         await changeEmail(settingsData.email);
-        setSuccess("Email updated successfully! Please verify your new email.");
+        successMessage = "Email updated successfully!";
       }
 
       if (settingsData.newPassword) {
-        if (settingsData.newPassword !== settingsData.confirmPassword) {
-          setError("Passwords do not match");
-          return;
-        }
         await changePassword(settingsData.newPassword);
-        setSuccess("Password updated successfully!");
+        successMessage = "Password updated successfully!";
         setSettingsData((prev) => ({
           ...prev,
           newPassword: "",
           confirmPassword: "",
         }));
+      }
+
+      if (successMessage) {
+        setSuccess(successMessage);
       }
     } catch (err: any) {
       setError(err.message || "Failed to update settings.");
@@ -420,6 +454,23 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to logout.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await sendPasswordReset(resetEmail.trim());
+      setSuccess("Password reset email sent! Please check your inbox.");
+      setResetEmail("");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -529,6 +580,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               {currentView === "orderHistory" && "Order History"}{" "}
               {currentView === "accountSettings" && "Account Settings"}
               {currentView === "analytics" && "Business Analytics"}
+              {currentView === "forgotPassword" && "Reset Password"}
             </h2>
           </div>
 
@@ -1413,14 +1465,40 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
 
                     <div className="form-group">
                       <label htmlFor="newPassword">New Password</label>
-                      <input
-                        type="password"
-                        id="newPassword"
-                        name="newPassword"
-                        value={settingsData.newPassword}
-                        onChange={handleSettingsChange}
-                        placeholder="Leave blank to keep current password"
-                      />
+                      <div className="password-input-wrapper">
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          id="newPassword"
+                          name="newPassword"
+                          value={settingsData.newPassword}
+                          onChange={handleSettingsChange}
+                          placeholder="Leave blank to keep current password"
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          aria-label={
+                            showNewPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showNewPassword ? (
+                            <svg viewBox="0 0 24 24" width="20" height="20">
+                              <path
+                                fill="currentColor"
+                                d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
+                              />
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" width="20" height="20">
+                              <path
+                                fill="currentColor"
+                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                              />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                       <small className="password-hint">
                         Must be 6+ characters with uppercase, number, and
                         special character
@@ -1431,14 +1509,44 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                       <label htmlFor="confirmPassword">
                         Confirm New Password
                       </label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={settingsData.confirmPassword}
-                        onChange={handleSettingsChange}
-                        placeholder="Confirm new password"
-                      />
+                      <div className="password-input-wrapper">
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          value={settingsData.confirmPassword}
+                          onChange={handleSettingsChange}
+                          placeholder="Confirm new password"
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <svg viewBox="0 0 24 24" width="20" height="20">
+                              <path
+                                fill="currentColor"
+                                d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
+                              />
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" width="20" height="20">
+                              <path
+                                fill="currentColor"
+                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                              />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -1515,7 +1623,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
       ) : (
-        // Login/Register view
         <div
           className="auth-modal-container"
           onClick={(e) => e.stopPropagation()}
@@ -1523,8 +1630,16 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
           <div className="auth-modal-header">
             <button
               className="back-button"
-              onClick={onClose}
-              aria-label="Close"
+              onClick={() => {
+                if (currentView === "forgotPassword") {
+                  setCurrentView("main");
+                  setError(null);
+                  setSuccess(null);
+                } else {
+                  onClose();
+                }
+              }}
+              aria-label={currentView === "forgotPassword" ? "Back" : "Close"}
             >
               <svg viewBox="0 0 24 24" width="24" height="24">
                 <path
@@ -1534,7 +1649,11 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               </svg>
             </button>
             <h2 className="auth-modal-title">
-              {isLogin ? "Sign In" : "Create Account"}
+              {currentView === "forgotPassword"
+                ? "Reset Password"
+                : isLogin
+                  ? "Sign In"
+                  : "Create Account"}
             </h2>
           </div>
 
@@ -1542,197 +1661,249 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            <form onSubmit={handleSubmit} className="auth-form">
-              {!isLogin && (
-                <>
-                  <div className="form-group">
-                    <label htmlFor="firstName">
-                      First Name <span className="required">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your first name"
-                      required={!isLogin}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="lastName">
-                      Last Name <span className="required">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your last name"
-                      required={!isLogin}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="phoneNumber">
-                      Phone Number <span className="required">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleInputChange}
-                      placeholder="(555) 123-4567"
-                      required={!isLogin}
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="form-group">
-                <label htmlFor="email">
-                  Email Address <span className="required">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">
-                  Password <span className="required">*</span>
-                </label>
-                <div className="password-input-wrapper">
+            {currentView === "forgotPassword" ? (
+              <form onSubmit={handleForgotPassword} className="auth-form">
+                <p className="reset-password-description">
+                  Enter the email address associated with your account and we'll
+                  send you a link to reset your password.
+                </p>
+                <div className="form-group">
+                  <label htmlFor="resetEmail">
+                    Email Address <span className="required">*</span>
+                  </label>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="Enter your password"
+                    type="email"
+                    id="resetEmail"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="Enter your email address"
                     required
+                    disabled={loading}
                   />
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <svg viewBox="0 0 24 24" width="20" height="20">
-                        <path
-                          fill="currentColor"
-                          d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
-                        />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="20" height="20">
-                        <path
-                          fill="currentColor"
-                          d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                        />
-                      </svg>
-                    )}
-                  </button>
                 </div>
-                {!isLogin && (
-                  <small className="password-hint">
-                    Must be 6+ characters with uppercase, number, and special
-                    character
-                  </small>
-                )}
-              </div>
-
-              {isLogin && (
-                <div className="forgot-password">
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault(); /* Handle forgot password */
-                    }}
-                  >
-                    Forgot Password?
-                  </a>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="submit-button"
-                disabled={loading}
-              >
-                {loading
-                  ? isLogin
-                    ? "Signing In..."
-                    : "Creating Account..."
-                  : isLogin
-                    ? "Sign In"
-                    : "Create Account"}
-              </button>
-            </form>
-
-            <div className="auth-toggle">
-              <p>
-                {isLogin
-                  ? "Don't have an account? "
-                  : "Already have an account? "}
                 <button
-                  type="button"
-                  className="toggle-link"
-                  onClick={toggleMode}
-                  disabled={loading}
+                  type="submit"
+                  className="submit-button"
+                  disabled={loading || !resetEmail.trim()}
                 >
-                  {isLogin ? "Sign up" : "Sign in"}
+                  {loading ? "Sending..." : "Send Reset Link"}
                 </button>
-              </p>
-            </div>
+                <div className="auth-toggle">
+                  <p>
+                    Remember your password?{" "}
+                    <button
+                      type="button"
+                      className="toggle-link"
+                      onClick={() => {
+                        setCurrentView("main");
+                        setError(null);
+                        setSuccess(null);
+                      }}
+                    >
+                      Sign in
+                    </button>
+                  </p>
+                </div>
+              </form>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="auth-form">
+                  {!isLogin && (
+                    <>
+                      <div className="form-group">
+                        <label htmlFor="firstName">
+                          First Name <span className="required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          placeholder="Enter your first name"
+                          required={!isLogin}
+                        />
+                      </div>
 
-            <div className="divider">
-              <span>or</span>
-            </div>
+                      <div className="form-group">
+                        <label htmlFor="lastName">
+                          Last Name <span className="required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleInputChange}
+                          placeholder="Enter your last name"
+                          required={!isLogin}
+                        />
+                      </div>
 
-            <button
-              className="google-signin-button"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              type="button"
-            >
-              <svg
-                className="google-icon"
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-              >
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              {loading ? "Signing in..." : "Continue with Google"}
-            </button>
+                      <div className="form-group">
+                        <label htmlFor="phoneNumber">
+                          Phone Number <span className="required">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          value={formData.phoneNumber}
+                          onChange={handleInputChange}
+                          placeholder="(555) 123-4567"
+                          required={!isLogin}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="form-group">
+                    <label htmlFor="email">
+                      Email Address <span className="required">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="password">
+                      Password <span className="required">*</span>
+                    </label>
+                    <div className="password-input-wrapper">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        placeholder="Enter your password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? (
+                          <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path
+                              fill="currentColor"
+                              d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
+                            />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path
+                              fill="currentColor"
+                              d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {!isLogin && (
+                      <small className="password-hint">
+                        Must be 6+ characters with uppercase, number, and
+                        special character
+                      </small>
+                    )}
+                  </div>
+
+                  {isLogin && (
+                    <div className="forgot-password">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setError(null);
+                          setSuccess(null);
+                          setResetEmail("");
+                          setCurrentView("forgotPassword");
+                        }}
+                      >
+                        Forgot Password?
+                      </a>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="submit-button"
+                    disabled={loading}
+                  >
+                    {loading
+                      ? isLogin
+                        ? "Signing In..."
+                        : "Creating Account..."
+                      : isLogin
+                        ? "Sign In"
+                        : "Create Account"}
+                  </button>
+                </form>
+
+                <div className="auth-toggle">
+                  <p>
+                    {isLogin
+                      ? "Don't have an account? "
+                      : "Already have an account? "}
+                    <button
+                      type="button"
+                      className="toggle-link"
+                      onClick={toggleMode}
+                      disabled={loading}
+                    >
+                      {isLogin ? "Sign up" : "Sign in"}
+                    </button>
+                  </p>
+                </div>
+
+                <div className="divider">
+                  <span>or</span>
+                </div>
+
+                <button
+                  className="google-signin-button"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  type="button"
+                >
+                  <svg
+                    className="google-icon"
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                  >
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Continue with Google
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import {
   type AddressSuggestion,
   type AddressDetails,
 } from "../../services/addressService";
-import "./addressAutocomplete.css";
+import "./AddressAutocomplete.css";
 
 interface AddressAutocompleteProps {
   onAddressSelect: (address: AddressDetails) => void;
