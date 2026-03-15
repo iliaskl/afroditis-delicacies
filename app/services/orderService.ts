@@ -3,7 +3,6 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   getDocs,
   query,
   where,
@@ -20,7 +19,7 @@ import type {
   PaymentMethod,
 } from "../types/types";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function generateOrderCode(): string {
   const date = new Date();
@@ -29,7 +28,7 @@ function generateOrderCode(): string {
   return `ORD-${dateStr}-${rand}`;
 }
 
-function docToOrder(id: string, data: any): Order {
+function docToOrder(id: string, data: Record<string, any>): Order {
   return {
     id,
     orderCode: data.orderCode,
@@ -52,15 +51,11 @@ function docToOrder(id: string, data: any): Order {
   };
 }
 
-/** Format a Date as "YYYY-MM-DD" key using local time */
 export function dateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-/**
- * Convert a time string like "2:30 PM" → minutes since midnight.
- */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const [timePart, ampm] = time.split(" ");
   const [h, m] = timePart.split(":").map(Number);
   let hours = h;
@@ -69,11 +64,6 @@ function timeToMinutes(time: string): number {
   return hours * 60 + m;
 }
 
-/**
- * Given a booked delivery time, return the set of all time slots that must be
- * blocked: the booked slot itself + the slot immediately before and after it
- * (±30 min), to provide a traffic buffer.
- */
 function getBufferSlots(bookedTime: string, allSlots: string[]): string[] {
   const bookedMins = timeToMinutes(bookedTime);
   return allSlots.filter(
@@ -81,8 +71,6 @@ function getBufferSlots(bookedTime: string, allSlots: string[]): string[] {
   );
 }
 
-// All possible time slots (10 AM – 10 PM in 30-min increments).
-// Keeping this in the service so buffer logic and checkout share the same list.
 export const ALL_TIME_SLOTS: string[] = (() => {
   const slots: string[] = [];
   for (let h = 10; h < 22; h++) {
@@ -95,7 +83,7 @@ export const ALL_TIME_SLOTS: string[] = (() => {
   return slots;
 })();
 
-// ─── Place Order ─────────────────────────────────────────────────────────────
+// ─── Place Order ──────────────────────────────────────────────────────────────
 
 export interface PlaceOrderPayload {
   userId: string;
@@ -118,11 +106,9 @@ export interface PlaceOrderPayload {
 
 export async function placeOrder(payload: PlaceOrderPayload): Promise<string> {
   try {
-    const orderCode = generateOrderCode();
     const now = Timestamp.now();
-
-    const orderData = {
-      orderCode,
+    const docRef = await addDoc(collection(db, "orders"), {
+      orderCode: generateOrderCode(),
       userId: payload.userId,
       customerName: payload.customerName,
       customerEmail: payload.customerEmail,
@@ -142,14 +128,8 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<string> {
       adminNotes: "",
       isNewForAdmin: true,
       updatedAt: now,
-    };
-
-    const docRef = await addDoc(collection(db, "orders"), orderData);
-
-    // Immediately block the selected time slot and its ±30-min buffer
-    // so concurrent customers cannot book the same window.
+    });
     await saveBookedSlots(payload.deliveryDate, payload.deliveryTime);
-
     return docRef.id;
   } catch (error) {
     console.error("Error placing order:", error);
@@ -157,7 +137,7 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<string> {
   }
 }
 
-// ─── Get Order By ID ──────────────────────────────────────────────────────────
+// ─── Order Queries ────────────────────────────────────────────────────────────
 
 export async function getOrderById(orderId: string): Promise<Order | null> {
   try {
@@ -170,13 +150,10 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
   }
 }
 
-// ─── Subscribe to All Orders ──────────────────────────────────────────────────
-
 export function subscribeToAllOrders(
   callback: (orders: Order[]) => void,
 ): () => void {
-  const q = collection(db, "orders");
-  return onSnapshot(q, (snap) => {
+  return onSnapshot(collection(db, "orders"), (snap) => {
     const orders = snap.docs.map((d) => docToOrder(d.id, d.data()));
     orders.sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime());
     callback(orders);
@@ -186,18 +163,28 @@ export function subscribeToAllOrders(
 export function getNewOrderCount(
   callback: (count: number) => void,
 ): () => void {
-  const q = query(collection(db, "orders"), where("isNewForAdmin", "==", true));
-  return onSnapshot(q, (snap) => {
-    callback(snap.size);
-  });
+  return onSnapshot(
+    query(collection(db, "orders"), where("isNewForAdmin", "==", true)),
+    (snap) => callback(snap.size),
+  );
 }
 
-// ─── Check Booked / Reserved Times ───────────────────────────────────────────
+export async function getOrdersByUser(userId: string): Promise<Order[]> {
+  try {
+    const snap = await getDocs(
+      query(collection(db, "orders"), where("userId", "==", userId)),
+    );
+    const orders = snap.docs.map((d) => docToOrder(d.id, d.data()));
+    orders.sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime());
+    return orders;
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    return [];
+  }
+}
 
-/**
- * Returns booked — the exact delivery times on the given date (pending + active),
- * expanded to include their ±30-min buffer slots.
- */
+// ─── Booked Times ─────────────────────────────────────────────────────────────
+
 export async function getBookedTimesForDate(
   date: Date,
 ): Promise<{ booked: string[] }> {
@@ -207,8 +194,6 @@ export async function getBookedTimesForDate(
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Query by date range only (no composite index required), then filter
-    // by status in application code to avoid missing Firestore indexes.
     const dateSnap = await getDocs(
       query(
         collection(db, "orders"),
@@ -216,23 +201,18 @@ export async function getBookedTimesForDate(
         where("deliveryDate", "<=", Timestamp.fromDate(endOfDay)),
       ),
     );
+
     const rawBooked: string[] = dateSnap.docs
-      .filter((d) => {
-        const status = d.data().status;
-        return status === "active" || status === "pending";
-      })
+      .filter((d) => ["active", "pending"].includes(d.data().status))
       .map((d) => d.data().deliveryTime as string)
       .filter(Boolean);
 
-    // Expand each booked time to include its ±30-min buffer slots.
-    // Expand each booked time to include its ±30-min buffer slots.
     const bookedWithBuffer = new Set<string>();
     for (const t of rawBooked) {
       for (const slot of getBufferSlots(t, ALL_TIME_SLOTS)) {
         bookedWithBuffer.add(slot);
       }
     }
-
     return { booked: Array.from(bookedWithBuffer) };
   } catch (error) {
     console.error("Error fetching booked times:", error);
@@ -240,7 +220,7 @@ export async function getBookedTimesForDate(
   }
 }
 
-// ─── Admin: Blocked Days ──────────────────────────────────────────────────────
+// ─── Blocked Days ─────────────────────────────────────────────────────────────
 
 const BLOCKED_DAYS_DOC = doc(db, "adminSettings", "blockedDays");
 
@@ -278,10 +258,7 @@ export async function unblockDay(date: Date): Promise<void> {
   await setDoc(BLOCKED_DAYS_DOC, { days: existing.filter((d) => d !== key) });
 }
 
-// ─── Admin: Blocked Time Slots (per-day) ─────
-// ────────────────────────────────
-// Stored in Firestore as adminSettings/bookedSlots → { [dateKey]: string[] }
-// Each entry is the set of slots blocked due to approved orders (incl. buffers).
+// ─── Booked Slots ─────────────────────────────────────────────────────────────
 
 const BOOKED_SLOTS_DOC = doc(db, "adminSettings", "bookedSlots");
 
@@ -291,35 +268,29 @@ async function getBookedSlotsMap(): Promise<Record<string, string[]>> {
   return (snap.data() as Record<string, string[]>) ?? {};
 }
 
-/**
- * Persist the buffer slots for a placed order so that the time slot
- * and its ±30-min buffer are immediately blocked for other customers.
- */
 async function saveBookedSlots(
   deliveryDate: Date,
   deliveryTime: string,
 ): Promise<void> {
   const key = dateKey(deliveryDate);
   const slotsMap = await getBookedSlotsMap();
-  const existing: string[] = slotsMap[key] ?? [];
-  const newSlots = getBufferSlots(deliveryTime, ALL_TIME_SLOTS);
-  const merged = Array.from(new Set([...existing, ...newSlots]));
+  const merged = Array.from(
+    new Set([
+      ...(slotsMap[key] ?? []),
+      ...getBufferSlots(deliveryTime, ALL_TIME_SLOTS),
+    ]),
+  );
   await setDoc(BOOKED_SLOTS_DOC, { ...slotsMap, [key]: merged });
 }
 
-/**
- * Remove the buffer slots that were added when the order was approved,
- * restoring those slots to available when an order is declined.
- */
 async function removeBookedSlotsForDecline(
   deliveryDate: Date,
   deliveryTime: string,
 ): Promise<void> {
   const key = dateKey(deliveryDate);
   const slotsMap = await getBookedSlotsMap();
-  const existing: string[] = slotsMap[key] ?? [];
   const slotsToRemove = new Set(getBufferSlots(deliveryTime, ALL_TIME_SLOTS));
-  const remaining = existing.filter((s) => !slotsToRemove.has(s));
+  const remaining = (slotsMap[key] ?? []).filter((s) => !slotsToRemove.has(s));
   if (remaining.length === 0) {
     const { [key]: _removed, ...rest } = slotsMap;
     await setDoc(BOOKED_SLOTS_DOC, rest);
@@ -330,21 +301,8 @@ async function removeBookedSlotsForDecline(
 
 // ─── Admin Actions ────────────────────────────────────────────────────────────
 
-/**
- * Approve an order:
- *  1. Set status → "active"
- *  2. Persist the delivery slot + its ±30-min buffer as blocked
- *  3. Auto-block the whole week if this fills the weekly cap
- */
 export async function approveOrder(orderId: string): Promise<void> {
   try {
-    const orderSnap = await getDoc(doc(db, "orders", orderId));
-    if (!orderSnap.exists()) throw new Error("Order not found.");
-    const data = orderSnap.data();
-    const deliveryDate: Date =
-      data.deliveryDate?.toDate?.() ?? new Date(data.deliveryDate);
-    const deliveryTime: string = data.deliveryTime;
-
     await updateDoc(doc(db, "orders", orderId), {
       status: "active",
       isNewForAdmin: false,
@@ -356,12 +314,6 @@ export async function approveOrder(orderId: string): Promise<void> {
   }
 }
 
-/**
- * Decline an order:
- *  1. Set status → "declined"
- *  2. Remove the blocked delivery slots so they're available again
- *  3. Unblock the week if it drops below the cap
- */
 export async function declineOrder(
   orderId: string,
   adminNotes?: string,
@@ -370,10 +322,8 @@ export async function declineOrder(
     const orderSnap = await getDoc(doc(db, "orders", orderId));
     if (!orderSnap.exists()) throw new Error("Order not found.");
     const data = orderSnap.data();
-
     const deliveryDate: Date =
       data.deliveryDate?.toDate?.() ?? new Date(data.deliveryDate);
-    const deliveryTime: string = data.deliveryTime;
 
     await updateDoc(doc(db, "orders", orderId), {
       status: "declined",
@@ -381,16 +331,13 @@ export async function declineOrder(
       adminNotes: adminNotes || "",
       updatedAt: Timestamp.now(),
     });
-
-    // Free up the slots — blocked at placement time, so always unblock on decline.
-    await removeBookedSlotsForDecline(deliveryDate, deliveryTime);
+    await removeBookedSlotsForDecline(deliveryDate, data.deliveryTime);
   } catch (error) {
     console.error("Error declining order:", error);
     throw new Error("Failed to decline order.");
   }
 }
 
-/** Mark an order as delivered (status → "delivered") */
 export async function markOrderDelivered(orderId: string): Promise<void> {
   try {
     await updateDoc(doc(db, "orders", orderId), {
@@ -404,7 +351,6 @@ export async function markOrderDelivered(orderId: string): Promise<void> {
   }
 }
 
-/** Mark order as viewed by admin (clears the notification badge count) */
 export async function markOrderViewedByAdmin(orderId: string): Promise<void> {
   try {
     await updateDoc(doc(db, "orders", orderId), {
@@ -413,23 +359,5 @@ export async function markOrderViewedByAdmin(orderId: string): Promise<void> {
     });
   } catch (error) {
     console.error("Error marking order as viewed:", error);
-  }
-}
-
-// ─── Customer: Get Orders By User ─────────────────────────────────────────────
-
-/**
- * Fetch all orders placed by a specific user, sorted newest first.
- */
-export async function getOrdersByUser(userId: string): Promise<Order[]> {
-  try {
-    const q = query(collection(db, "orders"), where("userId", "==", userId));
-    const snap = await getDocs(q);
-    const orders = snap.docs.map((d) => docToOrder(d.id, d.data()));
-    orders.sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime());
-    return orders;
-  } catch (error) {
-    console.error("Error fetching user orders:", error);
-    return [];
   }
 }

@@ -12,38 +12,23 @@ import {
   updateUserProfile,
   updateUserEmail,
   updateUserPassword,
-  getUserOrders,
   deleteUserAccount,
 } from "../../services/authService";
-import type {
-  UserProfile,
-  OrderHistory,
-  AuthFormData,
-} from "../../types/types";
+import type { UserProfile, AuthFormData } from "../../types/types";
 
 interface AuthContextType {
-  // Auth state
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-
-  // Auth functions
   register: (formData: AuthFormData) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
-
-  // Profile functions
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   changeEmail: (newEmail: string) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
-
-  // Order functions
-  getOrders: () => Promise<OrderHistory[]>;
-
-  // Account management
   deleteAccount: (password?: string) => Promise<void>;
 }
 
@@ -54,13 +39,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-
       if (firebaseUser) {
-        // Fetch user profile from Firestore
         try {
           const profile = await getUserProfile(firebaseUser.uid);
           setUserProfile(profile);
@@ -70,133 +52,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUserProfile(null);
       }
-
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Register new user
   async function register(formData: AuthFormData): Promise<void> {
-    try {
-      const newUser = await registerUser(formData);
-      // Profile will be loaded by onAuthStateChanged
-    } catch (error) {
-      throw error;
-    }
+    await registerUser(formData);
   }
 
-  // Login existing user
   async function login(email: string, password: string): Promise<void> {
-    try {
-      await loginUser(email, password);
-      // User state will be updated by onAuthStateChanged
-    } catch (error) {
-      throw error;
-    }
+    await loginUser(email, password);
   }
 
-  // Login with Google
   async function loginWithGoogle(): Promise<void> {
-    try {
-      await signInWithGoogle();
-      // User state will be updated by onAuthStateChanged
-    } catch (error) {
-      throw error;
-    }
+    await signInWithGoogle();
   }
 
-  // Logout current user
   async function logout(): Promise<void> {
-    try {
-      await logoutUser();
-      setUserProfile(null);
-    } catch (error) {
-      throw error;
-    }
+    await logoutUser();
+    setUserProfile(null);
   }
 
-  // Send password reset email
   async function sendPasswordReset(email: string): Promise<void> {
-    try {
-      await resetPassword(email);
-    } catch (error) {
-      throw error;
-    }
+    await resetPassword(email);
   }
 
-  // Refresh user profile from Firestore
   async function refreshProfile(): Promise<void> {
     if (!user) return;
-
-    try {
-      const profile = await getUserProfile(user.uid);
-      setUserProfile(profile);
-    } catch (error) {
-      throw error;
-    }
+    const profile = await getUserProfile(user.uid);
+    setUserProfile(profile);
   }
 
-  // Update user profile
   async function updateProfile(updates: Partial<UserProfile>): Promise<void> {
-    if (!user) {
-      throw new Error("No user signed in");
-    }
-
-    try {
-      await updateUserProfile(user.uid, updates);
-      await refreshProfile();
-    } catch (error) {
-      throw error;
-    }
+    if (!user) throw new Error("No user signed in");
+    await updateUserProfile(user.uid, updates);
+    await refreshProfile();
   }
 
-  // Change user email
   async function changeEmail(newEmail: string): Promise<void> {
-    try {
-      await updateUserEmail(newEmail);
-      await user?.reload();
-      await refreshProfile();
-    } catch (error) {
-      throw error;
-    }
+    await updateUserEmail(newEmail);
+    await user?.reload();
+    await refreshProfile();
   }
 
-  // Change user password
   async function changePassword(newPassword: string): Promise<void> {
-    try {
-      await updateUserPassword(newPassword);
-    } catch (error) {
-      throw error;
-    }
+    await updateUserPassword(newPassword);
   }
 
-  // Get user orders
-  async function getOrders(): Promise<OrderHistory[]> {
-    if (!user) {
-      throw new Error("No user signed in");
-    }
-
-    try {
-      return await getUserOrders(user.uid);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Delete user account
   async function deleteAccount(password?: string): Promise<void> {
-    if (!user) {
-      throw new Error("No user signed in");
-    }
-    try {
-      await deleteUserAccount(user, password);
-      setUser(null);
-      setUserProfile(null);
-    } catch (error) {
-      throw error;
-    }
+    if (!user) throw new Error("No user signed in");
+    await deleteUserAccount(user, password);
+    setUser(null);
+    setUserProfile(null);
   }
 
   const value: AuthContextType = {
@@ -212,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateProfile,
     changeEmail,
     changePassword,
-    getOrders,
     deleteAccount,
   };
 
@@ -223,7 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

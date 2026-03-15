@@ -48,7 +48,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     updateProfile,
     changeEmail,
     changePassword,
-    getOrders,
     deleteAccount,
   } = useAuth();
   const isAdmin = user && userProfile?.role === "admin";
@@ -312,7 +311,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
           password: formData.password,
           phoneNumber: formData.phoneNumber,
         });
-        setSuccess("Account created successfully! You can now sign in.");
+        setSuccess("Account created successfully!");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred. Please try again.");

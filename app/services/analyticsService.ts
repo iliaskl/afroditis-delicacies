@@ -1,11 +1,5 @@
 // app/services/analyticsService.ts
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import type { Order, OrderStatus } from "../types/types";
 

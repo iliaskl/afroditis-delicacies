@@ -34,25 +34,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Calculate cart metrics
-  const cartCount = cartItems.reduce((total, item) => {
-    return total + item.quantities.reduce((sum, q) => sum + q.quantity, 0);
-  }, 0);
+  const cartCount = cartItems.reduce(
+    (total, item) =>
+      total + item.quantities.reduce((sum, q) => sum + q.quantity, 0),
+    0,
+  );
 
-  const cartTotal = cartItems.reduce((total, item) => {
-    return (
-      total + item.quantities.reduce((sum, q) => sum + q.price * q.quantity, 0)
-    );
-  }, 0);
+  const cartTotal = cartItems.reduce(
+    (total, item) =>
+      total + item.quantities.reduce((sum, q) => sum + q.price * q.quantity, 0),
+    0,
+  );
 
-  // Load cart when user changes
   useEffect(() => {
     async function loadCart() {
       if (!user) {
         setCartItems([]);
         return;
       }
-
       try {
         setLoading(true);
         const items = await getCart(user.uid);
@@ -63,87 +62,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     }
-
     loadCart();
   }, [user]);
 
-  // Add item to cart
   async function addToCart(
     item: Omit<CartItem, "id" | "userId" | "addedAt">,
   ): Promise<void> {
-    if (!user) {
-      throw new Error("Must be logged in to add items to cart");
-    }
-
-    try {
-      await addToCartService(user.uid, item);
-      await refreshCart();
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
-      throw error;
-    }
+    if (!user) throw new Error("Must be logged in to add items to cart");
+    await addToCartService(user.uid, item);
+    await refreshCart();
   }
 
-  // Update item quantity
   async function updateQuantity(
     itemId: string,
     size: string,
     quantity: number,
   ): Promise<void> {
-    if (!user) {
-      throw new Error("Must be logged in to update cart");
-    }
-
-    try {
-      await updateCartItemService(user.uid, itemId, size, quantity);
-      await refreshCart();
-    } catch (error) {
-      console.error("Failed to update quantity:", error);
-      throw error;
-    }
+    if (!user) throw new Error("Must be logged in to update cart");
+    await updateCartItemService(itemId, size, quantity);
+    await refreshCart();
   }
 
-  // Remove item from cart
   async function removeItem(itemId: string): Promise<void> {
-    if (!user) {
-      throw new Error("Must be logged in to remove items");
-    }
-
-    try {
-      await removeFromCartService(user.uid, itemId);
-      await refreshCart();
-    } catch (error) {
-      console.error("Failed to remove item:", error);
-      throw error;
-    }
+    if (!user) throw new Error("Must be logged in to remove items");
+    await removeFromCartService(itemId);
+    await refreshCart();
   }
 
-  // Clear entire cart
   async function clearCart(): Promise<void> {
-    if (!user) {
-      throw new Error("Must be logged in to clear cart");
-    }
-
-    try {
-      await clearCartService(user.uid);
-      setCartItems([]);
-    } catch (error) {
-      console.error("Failed to clear cart:", error);
-      throw error;
-    }
+    if (!user) throw new Error("Must be logged in to clear cart");
+    await clearCartService(user.uid);
+    setCartItems([]);
   }
 
-  // Refresh cart from Firestore
   async function refreshCart(): Promise<void> {
     if (!user) return;
-
-    try {
-      const items = await getCart(user.uid);
-      setCartItems(items);
-    } catch (error) {
-      console.error("Failed to refresh cart:", error);
-      throw error;
-    }
+    const items = await getCart(user.uid);
+    setCartItems(items);
   }
 
   const value: CartContextType = {
@@ -161,7 +116,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-// Custom hook to use cart context
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {

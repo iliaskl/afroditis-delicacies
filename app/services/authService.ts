@@ -24,117 +24,84 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
   Timestamp,
 } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
-import type { UserProfile, OrderHistory, AuthFormData } from "../types/types";
+import type { UserProfile, AuthFormData } from "../types/types";
 import { emailService } from "./emailService";
 
-/**
- * Validate password strength
- */
 function validatePassword(password: string): {
   isValid: boolean;
   message: string;
 } {
-  if (password.length < 6) {
+  if (password.length < 6)
     return {
       isValid: false,
       message: "Password must be at least 6 characters long",
     };
-  }
-  if (!/[A-Z]/.test(password)) {
+  if (!/[A-Z]/.test(password))
     return {
       isValid: false,
       message: "Password must contain at least one uppercase letter",
     };
-  }
-  if (!/[0-9]/.test(password)) {
+  if (!/[0-9]/.test(password))
     return {
       isValid: false,
       message: "Password must contain at least one number",
     };
-  }
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password))
     return {
       isValid: false,
       message:
         "Password must contain at least one special character (!@#$%^&*...)",
     };
-  }
   return { isValid: true, message: "" };
 }
 
-/**
- * Validate phone number format
- */
 function validatePhoneNumber(phoneNumber: string): {
   isValid: boolean;
   message: string;
 } {
-  // Remove all non-digit characters
   const digitsOnly = phoneNumber.replace(/\D/g, "");
-
-  // Check if it's a valid US phone number (10 digits)
-  if (digitsOnly.length !== 10) {
+  if (digitsOnly.length !== 10)
     return {
       isValid: false,
       message: "Phone number must be 10 digits (e.g., (555) 123-4567)",
     };
-  }
-
-  // Check if first digit is not 0 or 1
-  if (digitsOnly[0] === "0" || digitsOnly[0] === "1") {
-    return {
-      isValid: false,
-      message: "Phone number cannot start with 0 or 1",
-    };
-  }
-
+  if (digitsOnly[0] === "0" || digitsOnly[0] === "1")
+    return { isValid: false, message: "Phone number cannot start with 0 or 1" };
   return { isValid: true, message: "" };
 }
 
-/**
- * Register a new user with email and password
- * Creates user profile in Firestore and sends verification email
- */
 export async function registerUser(formData: AuthFormData): Promise<User> {
   try {
-    // Validate password strength
     const passwordValidation = validatePassword(formData.password);
-    if (!passwordValidation.isValid) {
+    if (!passwordValidation.isValid)
       throw new Error(passwordValidation.message);
-    }
 
-    // Validate phone number (now required)
-    if (!formData.phoneNumber || formData.phoneNumber.trim() === "") {
+    if (!formData.phoneNumber?.trim())
       throw new Error("Phone number is required");
-    }
 
     const phoneValidation = validatePhoneNumber(formData.phoneNumber);
-    if (!phoneValidation.isValid) {
-      throw new Error(phoneValidation.message);
-    }
+    if (!phoneValidation.isValid) throw new Error(phoneValidation.message);
 
-    // Create Firebase Auth user
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       formData.email,
       formData.password,
     );
-
     const user = userCredential.user;
 
-    // Update display name in Firebase Auth
     if (formData.firstName && formData.lastName) {
       await updateProfile(user, {
         displayName: `${formData.firstName} ${formData.lastName}`,
       });
     }
 
-    // Create user profile document in Firestore
-    const userProfileData: any = {
+    const userProfileData: Omit<UserProfile, "createdAt" | "updatedAt"> & {
+      createdAt: Timestamp;
+      updatedAt: Timestamp;
+    } = {
       uid: user.uid,
       email: formData.email,
       firstName: formData.firstName || "",
@@ -143,18 +110,10 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       phoneNumber: formData.phoneNumber,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-      accountStatus: "active",
       role: "customer",
-      preferences: {
-        emailNotifications: true,
-        orderUpdates: true,
-        marketingEmails: false,
-      },
     };
 
-    // Save to Firestore
     await setDoc(doc(db, "users", user.uid), userProfileData);
-
     return user;
   } catch (error) {
     const authError = error as AuthError;
@@ -163,22 +122,20 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
   }
 }
 
-/**
- * Sign in with Google
- */
 export async function signInWithGoogle(): Promise<User> {
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Check if user profile exists in Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
 
     if (!userDoc.exists()) {
-      // Create new user profile for Google sign-in
       const names = user.displayName?.split(" ") || ["", ""];
-      const userProfileData: any = {
+      const userProfileData: Omit<UserProfile, "createdAt" | "updatedAt"> & {
+        createdAt: Timestamp;
+        updatedAt: Timestamp;
+      } = {
         uid: user.uid,
         email: user.email || "",
         firstName: names[0] || "",
@@ -186,24 +143,10 @@ export async function signInWithGoogle(): Promise<User> {
         displayName: user.displayName || "",
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        accountStatus: "active",
         role: "customer",
-        preferences: {
-          emailNotifications: true,
-          orderUpdates: true,
-          marketingEmails: false,
-        },
       };
-
-      // Only add photoURL if it exists
-      if (user.photoURL) {
-        userProfileData.photoURL = user.photoURL;
-      }
-
-      // Note: Google sign-in users will need to add phone number later
       await setDoc(doc(db, "users", user.uid), userProfileData);
     } else {
-      // Update last login timestamp
       await updateDoc(doc(db, "users", user.uid), {
         lastLogin: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -214,19 +157,12 @@ export async function signInWithGoogle(): Promise<User> {
   } catch (error) {
     const authError = error as AuthError;
     console.error("Google sign-in error:", authError);
-
-    // Handle popup closed by user
-    if (authError.code === "auth/popup-closed-by-user") {
+    if (authError.code === "auth/popup-closed-by-user")
       throw new Error("Sign-in cancelled");
-    }
-
     throw new Error(getAuthErrorMessage(authError));
   }
 }
 
-/**
- * Sign in existing user
- */
 export async function loginUser(
   email: string,
   password: string,
@@ -237,13 +173,10 @@ export async function loginUser(
       email,
       password,
     );
-
-    // Update last login timestamp
     await updateDoc(doc(db, "users", userCredential.user.uid), {
       lastLogin: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
-
     return userCredential.user;
   } catch (error) {
     const authError = error as AuthError;
@@ -252,9 +185,6 @@ export async function loginUser(
   }
 }
 
-/**
- * Sign out current user
- */
 export async function logoutUser(): Promise<void> {
   try {
     await signOut(auth);
@@ -264,30 +194,26 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
-/**
- * Send password reset email
- */
 export async function resetPassword(email: string): Promise<void> {
   try {
+    const exists = await checkEmailExists(email);
+    if (!exists)
+      throw new Error(
+        "No account found with this email address. Please check or sign up.",
+      );
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
+    if (error instanceof Error && !(error as AuthError).code) throw error;
     const authError = error as AuthError;
     console.error("Password reset error:", authError);
     throw new Error(getAuthErrorMessage(authError));
   }
 }
 
-/**
- * Get user profile from Firestore
- */
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   try {
     const userDoc = await getDoc(doc(db, "users", uid));
-
-    if (!userDoc.exists()) {
-      return null;
-    }
-
+    if (!userDoc.exists()) return null;
     const data = userDoc.data();
     return {
       ...data,
@@ -300,35 +226,25 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   }
 }
 
-/**
- * Update user profile in Firestore
- */
 export async function updateUserProfile(
   uid: string,
   updates: Partial<UserProfile>,
 ): Promise<void> {
   try {
-    // Validate phone number if it's being updated
     if (updates.phoneNumber) {
       const phoneValidation = validatePhoneNumber(updates.phoneNumber);
-      if (!phoneValidation.isValid) {
-        throw new Error(phoneValidation.message);
-      }
+      if (!phoneValidation.isValid) throw new Error(phoneValidation.message);
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ...updates,
       updatedAt: Timestamp.now(),
     };
 
-    // Remove undefined values and handle dates
     Object.keys(updateData).forEach((key) => {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
-      }
-      if (updateData[key] instanceof Date) {
-        updateData[key] = Timestamp.fromDate(updateData[key]);
-      }
+      if (updateData[key] === undefined) delete updateData[key];
+      if (updateData[key] instanceof Date)
+        updateData[key] = Timestamp.fromDate(updateData[key] as Date);
     });
 
     await updateDoc(doc(db, "users", uid), updateData);
@@ -338,19 +254,11 @@ export async function updateUserProfile(
   }
 }
 
-/**
- * Update user email
- */
 export async function updateUserEmail(newEmail: string): Promise<void> {
   try {
     const user = auth.currentUser;
-    if (!user) {
-      throw new Error("No user signed in");
-    }
-
+    if (!user) throw new Error("No user signed in");
     await updateEmail(user, newEmail);
-
-    // Update email in Firestore
     await updateDoc(doc(db, "users", user.uid), {
       email: newEmail,
       updatedAt: Timestamp.now(),
@@ -362,26 +270,17 @@ export async function updateUserEmail(newEmail: string): Promise<void> {
   }
 }
 
-/**
- * Update user password and send notification email
- */
 export async function updateUserPassword(newPassword: string): Promise<void> {
   try {
     const user = auth.currentUser;
-    if (!user) {
-      throw new Error("No user signed in");
-    }
+    if (!user) throw new Error("No user signed in");
 
-    // Validate password strength
     const passwordValidation = validatePassword(newPassword);
-    if (!passwordValidation.isValid) {
+    if (!passwordValidation.isValid)
       throw new Error(passwordValidation.message);
-    }
 
-    // Update password in Firebase Auth
     await updatePassword(user, newPassword);
 
-    // Send password change notification email
     if (user.email) {
       await emailService.sendPasswordChangeNotification(user.uid, user.email);
     }
@@ -392,42 +291,10 @@ export async function updateUserPassword(newPassword: string): Promise<void> {
   }
 }
 
-/**
- * Get user order history
- */
-export async function getUserOrders(uid: string): Promise<OrderHistory[]> {
-  try {
-    const ordersRef = collection(db, "orders");
-    const q = query(
-      ordersRef,
-      where("userId", "==", uid),
-      orderBy("orderDate", "desc"),
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        orderDate: data.orderDate.toDate(),
-        deliveryDate: data.deliveryDate.toDate(),
-      } as OrderHistory;
-    });
-  } catch (error) {
-    console.error("Get user orders error:", error);
-    throw new Error("Failed to fetch order history.");
-  }
-}
-
-/**
- * Check if email is already registered
- */
 export async function checkEmailExists(email: string): Promise<boolean> {
   try {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", email));
+    const q = query(collection(db, "users"), where("email", "==", email));
     const querySnapshot = await getDocs(q);
-
     return !querySnapshot.empty;
   } catch (error) {
     console.error("Check email error:", error);
@@ -441,69 +308,41 @@ export async function deleteUserAccount(
 ): Promise<void> {
   try {
     const uid = user.uid;
-
-    // Reauthenticate before deletion (Firebase requires recent login)
-    const providerData = user.providerData;
-    const isGoogleUser = providerData.some(
+    const isGoogleUser = user.providerData.some(
       (p) => p.providerId === "google.com",
     );
 
     if (isGoogleUser) {
-      // Reauthenticate Google user via popup
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
       if (!credential) throw new Error("Failed to get Google credential.");
       await reauthenticateWithCredential(user, credential);
     } else {
-      // Reauthenticate email/password user
       if (!password)
         throw new Error("Password is required to delete your account.");
       const credential = EmailAuthProvider.credential(user.email!, password);
       await reauthenticateWithCredential(user, credential);
     }
 
-    // Anonymize all orders belonging to this user
-    const ordersRef = collection(db, "orders");
-    const q = query(ordersRef, where("userId", "==", uid));
-    const orderSnapshot = await getDocs(q);
-
-    const anonymizePromises = orderSnapshot.docs.map((orderDoc) =>
-      updateDoc(orderDoc.ref, {
-        userId: "deleted_user",
-        customerName: "Deleted User",
-        customerEmail: "deleted@deleted.com",
-        customerPhone: "",
-      }),
-    );
-    await Promise.all(anonymizePromises);
-
-    // Delete Firestore user profile
     await deleteDoc(doc(db, "users", uid));
-
-    // Delete Firebase Auth account
     await deleteUser(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Delete account error:", error);
+    const authError = error as AuthError;
     if (
-      error.code === "auth/wrong-password" ||
-      error.code === "auth/invalid-credential"
-    ) {
+      authError.code === "auth/wrong-password" ||
+      authError.code === "auth/invalid-credential"
+    )
       throw new Error("Incorrect password. Please try again.");
-    }
     throw new Error(
-      error.message || "Failed to delete account. Please try again.",
+      authError.message || "Failed to delete account. Please try again.",
     );
   }
 }
 
-/**
- * Convert Firebase Auth error codes to user-friendly messages
- */
 function getAuthErrorMessage(error: AuthError): string {
-  // Remove "Firebase: " prefix from error messages
   const cleanMessage = (msg: string) => msg.replace(/^Firebase:\s*/i, "");
-
   switch (error.code) {
     case "auth/email-already-in-use":
       return "This email is already registered. Please sign in or use a different email.";
@@ -515,10 +354,10 @@ function getAuthErrorMessage(error: AuthError): string {
       return "Password is too weak. Please use at least 6 characters with uppercase, number, and special character.";
     case "auth/user-disabled":
       return "This account has been disabled. Please contact support.";
+    case "auth/invalid-credential":
     case "auth/user-not-found":
-      return "No account found with this email. Please check or sign up.";
     case "auth/wrong-password":
-      return "Incorrect password. Please try again.";
+      return "The email or password is incorrect. Please try again.";
     case "auth/too-many-requests":
       return "Too many failed attempts. Please try again later.";
     case "auth/network-request-failed":

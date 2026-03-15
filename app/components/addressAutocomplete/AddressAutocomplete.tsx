@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   addressService,
   type AddressSuggestion,
@@ -29,7 +29,6 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -45,13 +44,6 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Initialize address service with Mapbox token
-  useEffect(() => {
-    if (mapboxToken) {
-      addressService.initialize(mapboxToken);
-    }
-  }, [mapboxToken]);
-
   useEffect(() => {
     if (mapboxToken) {
       addressService.initialize(mapboxToken);
@@ -62,20 +54,14 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
   }, [mapboxToken]);
 
-  // VITE_MAPBOX_TOKEN=pk.eyJ1IjoiY...your_actual_token_here
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
     setError(null);
     setSelectedIndex(-1);
 
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-    // Debounce the search
     if (value.length >= 3) {
       setIsLoading(true);
       searchTimeoutRef.current = setTimeout(async () => {
@@ -90,7 +76,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         } finally {
           setIsLoading(false);
         }
-      }, 300); // 300ms debounce
+      }, 300);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -151,9 +137,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => {
-            if (suggestions.length > 0) {
-              setShowSuggestions(true);
-            }
+            if (suggestions.length > 0) setShowSuggestions(true);
           }}
           placeholder={placeholder}
           className="address-input"
@@ -182,9 +166,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           {suggestions.map((suggestion, index) => (
             <li
               key={suggestion.id}
-              className={`suggestion-item ${
-                index === selectedIndex ? "selected" : ""
-              }`}
+              className={`suggestion-item ${index === selectedIndex ? "selected" : ""}`}
               onClick={() => handleSuggestionClick(suggestion)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
