@@ -70,15 +70,11 @@ export default function Menu() {
     closeAll,
   } = useEditMenu();
 
-  // Customer popup state
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedCategoryHasTwoSizes, setSelectedCategoryHasTwoSizes] =
     useState(false);
-
-  // After other state declarations:
   const [userFavorites, setUserFavorites] = useState<string[]>([]);
 
-  // Add a new useEffect after the fetchMenuData one:
   useEffect(() => {
     if (!user) {
       setUserFavorites([]);
@@ -89,7 +85,6 @@ export default function Menu() {
     });
   }, [user]);
 
-  // Refresh favorites when popup closes (so heart updates after toggling):
   const handleClosePopup = () => {
     setSelectedItem(null);
     if (user) {
@@ -99,7 +94,6 @@ export default function Menu() {
     }
   };
 
-  // Fetch menu data from Firebase on component mount
   useEffect(() => {
     async function fetchMenuData() {
       try {
@@ -116,34 +110,27 @@ export default function Menu() {
         setLoading(false);
       }
     }
-
     fetchMenuData();
   }, []);
 
-  // Handle category name update
   const handleSaveCategoryName = async () => {
     if (!categoryBeingEdited || !newCategoryName.trim()) {
       alert("Please enter a valid category name");
       return;
     }
-
     if (newCategoryName.trim() === categoryBeingEdited) {
       closeAll();
       return;
     }
-
     try {
       setIsSubmitting(true);
       await updateCategoryName(categoryBeingEdited, newCategoryName.trim());
-
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
-
       if (selectedCategory === categoryBeingEdited) {
         setSelectedCategory(newCategoryName.trim());
       }
-
       alert("Category updated successfully!");
       closeAll();
     } catch (err) {
@@ -154,22 +141,17 @@ export default function Menu() {
     }
   };
 
-  // Handle category deletion
   const handleDeleteCategory = async () => {
     if (!categoryBeingDeleted) return;
-
     try {
       setIsSubmitting(true);
       await deleteCategoryService(categoryBeingDeleted);
-
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
-
       if (selectedCategory === categoryBeingDeleted) {
         setSelectedCategory("Full Menu");
       }
-
       alert("Category and associated dishes deleted successfully!");
       closeAll();
     } catch (err) {
@@ -180,19 +162,16 @@ export default function Menu() {
     }
   };
 
-  // Handle add dish
   const handleAddDish = async () => {
     if (!categoryForNewDish || !dishName.trim() || !dishPrice.trim()) {
       alert("Please fill in dish name and price");
       return;
     }
-
     const price = parseFloat(dishPrice);
     if (isNaN(price) || price <= 0) {
       alert("Please enter a valid price");
       return;
     }
-
     let secondPrice = undefined;
     if (dishSecondPrice.trim()) {
       secondPrice = parseFloat(dishSecondPrice);
@@ -201,15 +180,12 @@ export default function Menu() {
         return;
       }
     }
-
     try {
       setIsSubmitting(true);
-
       let imgPath = "";
       if (dishImage) {
         imgPath = await uploadDishImage(dishImage);
       }
-
       await addDishService({
         name: dishName.trim(),
         category: categoryForNewDish,
@@ -218,11 +194,9 @@ export default function Menu() {
         available: dishAvailable,
         imgPath,
       });
-
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
-
       alert("Dish added successfully!");
       closeAll();
     } catch (err) {
@@ -233,25 +207,20 @@ export default function Menu() {
     }
   };
 
-  // Handle add category
   const handleAddCategory = async () => {
     if (!newCategoryNameInput.trim()) {
       alert("Please enter a category name");
       return;
     }
-
     try {
       setIsSubmitting(true);
-
       await addCategoryService({
         name: newCategoryNameInput.trim(),
         hasTwoSizes: newCategoryHasTwoSizes,
       });
-
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
-
       alert("Category added successfully!");
       closeAll();
     } catch (err) {
@@ -262,19 +231,16 @@ export default function Menu() {
     }
   };
 
-  // Handle edit dish
   const handleEditDish = async () => {
     if (!dishBeingEdited || !dishName.trim() || !dishPrice.trim()) {
       alert("Please fill in dish name and price");
       return;
     }
-
     const price = parseFloat(dishPrice);
     if (isNaN(price) || price <= 0) {
       alert("Please enter a valid price");
       return;
     }
-
     let secondPrice = undefined;
     if (dishSecondPrice.trim()) {
       secondPrice = parseFloat(dishSecondPrice);
@@ -283,16 +249,12 @@ export default function Menu() {
         return;
       }
     }
-
     try {
       setIsSubmitting(true);
-
-      // If a new image was selected, upload it — otherwise keep the existing URL
       let imgPath = dishBeingEdited.imgPath || "";
       if (dishImage) {
         imgPath = await uploadDishImage(dishImage);
       }
-
       await updateDishService(dishBeingEdited.id, {
         name: dishName.trim(),
         price: price,
@@ -300,11 +262,9 @@ export default function Menu() {
         available: dishAvailable,
         imgPath,
       });
-
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
-
       alert("Dish updated successfully!");
       closeAll();
     } catch (err) {
@@ -315,18 +275,14 @@ export default function Menu() {
     }
   };
 
-  // Handle delete dish
   const handleDeleteDish = async () => {
     if (!dishBeingDeleted) return;
-
     try {
       setIsSubmitting(true);
       await deleteDishService(dishBeingDeleted.id);
-
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
-
       alert("Dish deleted successfully!");
       closeAll();
     } catch (err) {
@@ -337,7 +293,6 @@ export default function Menu() {
     }
   };
 
-  // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, item: MenuItem) => {
     setDraggedItem(item);
     e.dataTransfer.effectAllowed = "move";
@@ -346,7 +301,6 @@ export default function Menu() {
   const handleDragOver = (e: React.DragEvent, item: MenuItem) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-
     if (
       draggedItem &&
       draggedItem.id !== item.id &&
@@ -362,7 +316,6 @@ export default function Menu() {
 
   const handleDrop = async (e: React.DragEvent, dropTarget: MenuItem) => {
     e.preventDefault();
-
     if (
       !draggedItem ||
       draggedItem.id === dropTarget.id ||
@@ -372,36 +325,24 @@ export default function Menu() {
       setDragOverItem(null);
       return;
     }
-
     try {
-      // Get all items in the category, sorted by current order
       const categoryItems = menuItems
         .filter((item) => item.category === draggedItem.category)
         .sort((a, b) => a.order - b.order);
-
-      // Find the indices
       const draggedIndex = categoryItems.findIndex(
         (item) => item.id === draggedItem.id,
       );
       const dropIndex = categoryItems.findIndex(
         (item) => item.id === dropTarget.id,
       );
-
-      // Reorder the array
       const reorderedItems = [...categoryItems];
       const [removed] = reorderedItems.splice(draggedIndex, 1);
       reorderedItems.splice(dropIndex, 0, removed);
-
-      // Create updates with new order values
       const updates = reorderedItems.map((item, index) => ({
         id: item.id,
         order: index + 1,
       }));
-
-      // Update in Firestore
       await reorderDishesService(updates);
-
-      // Refresh menu data
       const data = await getMenuData();
       setCategories(data.categories);
       setMenuItems(data.items);
@@ -419,7 +360,6 @@ export default function Menu() {
     setDragOverItem(null);
   };
 
-  // Handle image selection
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -432,39 +372,30 @@ export default function Menu() {
     }
   };
 
-  // Handle menu item click - different behavior for admin vs customer
   const handleMenuItemClick = (item: MenuItem, hasTwoSizes: boolean) => {
     if (isAdmin) {
-      editDish(item); // Admin: open edit popup
+      editDish(item);
     } else {
-      // Customer: open add to cart popup
       setSelectedItem(item);
       setSelectedCategoryHasTwoSizes(hasTwoSizes);
     }
   };
 
-  // Create categories array with "Full Menu" as first option
   const allCategories = ["Full Menu", ...categories.map((cat) => cat.name)];
 
-  // Filter items based on selected category and admin status
-  // Non-admins only see available items
   const getFilteredItems = () => {
     let items =
       selectedCategory === "Full Menu"
         ? menuItems
         : menuItems.filter((item) => item.category === selectedCategory);
-
-    // Filter out unavailable items for non-admins
     if (!isAdmin) {
       items = items.filter((item) => item.available);
     }
-
     return items;
   };
 
   const filteredItems = getFilteredItems();
 
-  // Group items by category - Include empty categories for admins
   const groupedItems =
     selectedCategory === "Full Menu"
       ? categories.reduce(
@@ -472,12 +403,9 @@ export default function Menu() {
             const items = menuItems.filter(
               (item) => item.category === category.name,
             );
-            // Filter unavailable items for non-admins
             const displayItems = isAdmin
               ? items
               : items.filter((item) => item.available);
-
-            // Show category even if empty for admins, or if it has visible items
             if (isAdmin || displayItems.length > 0) {
               acc[category.name] = {
                 items: displayItems,
@@ -529,7 +457,6 @@ export default function Menu() {
   return (
     <div className="min-h-screen bg-white font-sans flex flex-col">
       <Header />
-
       <main className="menu-container">
         <div className="menu-header">
           <h1>Our Menu</h1>
@@ -551,7 +478,6 @@ export default function Menu() {
           ))}
         </div>
 
-        {/* Add Category Button */}
         {isAdmin && (
           <div className="add-category-section">
             <button onClick={openAddCategory} className="add-category-btn">
@@ -748,19 +674,16 @@ export default function Menu() {
           </div>
         )}
 
-        {/* Edit Category Popup */}
         {categoryBeingEdited && (
           <>
             <div className="edit-overlay" onClick={closeAll}></div>
             <div className="edit-menu-popup">
               <h2>Edit Category</h2>
               <p className="popup-subtitle">Update the category name</p>
-
               <div className="form-group">
                 <label>Current name:</label>
                 <div className="current-value">{categoryBeingEdited}</div>
               </div>
-
               <div className="form-group">
                 <label>New name:</label>
                 <input
@@ -772,7 +695,6 @@ export default function Menu() {
                   autoFocus
                 />
               </div>
-
               <div className="popup-buttons">
                 <button
                   className="save-btn"
@@ -781,7 +703,6 @@ export default function Menu() {
                 >
                   {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
-
                 <button
                   className="cancel-btn"
                   onClick={closeAll}
@@ -794,7 +715,6 @@ export default function Menu() {
           </>
         )}
 
-        {/* Delete Category Popup */}
         {categoryBeingDeleted && (
           <>
             <div className="edit-overlay" onClick={closeAll}></div>
@@ -803,7 +723,6 @@ export default function Menu() {
               <p className="popup-subtitle warning">
                 This action cannot be undone
               </p>
-
               <p className="confirmation-text">
                 Are you sure you want to delete{" "}
                 <strong>{categoryBeingDeleted}</strong>?
@@ -812,7 +731,6 @@ export default function Menu() {
                   All dishes in this category will also be deleted.
                 </span>
               </p>
-
               <div className="popup-buttons">
                 <button
                   className="delete-button"
@@ -821,7 +739,6 @@ export default function Menu() {
                 >
                   {isSubmitting ? "Deleting..." : "Yes, Delete"}
                 </button>
-
                 <button
                   className="cancel-btn"
                   onClick={closeAll}
@@ -834,7 +751,6 @@ export default function Menu() {
           </>
         )}
 
-        {/* Add Dish Popup */}
         {categoryForNewDish && (
           <>
             <div className="edit-overlay" onClick={closeAll}></div>
@@ -843,7 +759,6 @@ export default function Menu() {
               <p className="popup-subtitle">
                 Category: <strong>{categoryForNewDish}</strong>
               </p>
-
               <div className="form-group">
                 <label>Dish name: *</label>
                 <input
@@ -854,7 +769,6 @@ export default function Menu() {
                   disabled={isSubmitting}
                 />
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Small Price (Default): *</label>
@@ -868,7 +782,6 @@ export default function Menu() {
                     disabled={isSubmitting}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Large Price: (optional)</label>
                   <input
@@ -882,7 +795,6 @@ export default function Menu() {
                   />
                 </div>
               </div>
-
               <div className="form-group checkbox-group">
                 <label className="checkbox-label">
                   <input
@@ -894,7 +806,6 @@ export default function Menu() {
                   <span>Dish is available</span>
                 </label>
               </div>
-
               <div className="form-group">
                 <label>Dish Image: (placeholder)</label>
                 <div className="image-upload-section">
@@ -929,7 +840,6 @@ export default function Menu() {
                   )}
                 </div>
               </div>
-
               <div className="popup-buttons">
                 <button
                   className="save-btn"
@@ -940,7 +850,6 @@ export default function Menu() {
                 >
                   {isSubmitting ? "Adding..." : "Add Dish"}
                 </button>
-
                 <button
                   className="cancel-btn"
                   onClick={closeAll}
@@ -953,14 +862,12 @@ export default function Menu() {
           </>
         )}
 
-        {/* Add Category Popup */}
         {showAddCategory && (
           <>
             <div className="edit-overlay" onClick={closeAll}></div>
             <div className="edit-menu-popup">
               <h2>Add New Category</h2>
               <p className="popup-subtitle">Create a new menu category</p>
-
               <div className="form-group">
                 <label>Category name: *</label>
                 <input
@@ -972,7 +879,6 @@ export default function Menu() {
                   autoFocus
                 />
               </div>
-
               <div className="form-group checkbox-group">
                 <label className="checkbox-label">
                   <input
@@ -986,7 +892,6 @@ export default function Menu() {
                   <span>This category has two sizes (Large/Small)</span>
                 </label>
               </div>
-
               <div className="popup-buttons">
                 <button
                   className="save-btn"
@@ -995,7 +900,6 @@ export default function Menu() {
                 >
                   {isSubmitting ? "Adding..." : "Add Category"}
                 </button>
-
                 <button
                   className="cancel-btn"
                   onClick={closeAll}
@@ -1008,7 +912,6 @@ export default function Menu() {
           </>
         )}
 
-        {/* Edit Dish Popup */}
         {dishBeingEdited && (
           <>
             <div className="edit-overlay" onClick={closeAll}></div>
@@ -1017,7 +920,6 @@ export default function Menu() {
               <p className="popup-subtitle">
                 Category: <strong>{dishBeingEdited.category}</strong>
               </p>
-
               <div className="form-group">
                 <label>Dish name: *</label>
                 <input
@@ -1028,7 +930,6 @@ export default function Menu() {
                   disabled={isSubmitting}
                 />
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Small Price (Default): *</label>
@@ -1042,7 +943,6 @@ export default function Menu() {
                     disabled={isSubmitting}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Large Price: (optional)</label>
                   <input
@@ -1056,7 +956,6 @@ export default function Menu() {
                   />
                 </div>
               </div>
-
               <div className="form-group checkbox-group">
                 <label className="checkbox-label">
                   <input
@@ -1068,7 +967,6 @@ export default function Menu() {
                   <span>Dish is available</span>
                 </label>
               </div>
-
               <div className="form-group">
                 <label>Dish Image: (placeholder)</label>
                 <div className="image-upload-section">
@@ -1103,7 +1001,6 @@ export default function Menu() {
                   )}
                 </div>
               </div>
-
               <div className="popup-buttons">
                 <button
                   className="save-btn"
@@ -1114,7 +1011,6 @@ export default function Menu() {
                 >
                   {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
-
                 <button
                   className="delete-button"
                   onClick={() => {
@@ -1125,7 +1021,6 @@ export default function Menu() {
                 >
                   Delete Dish
                 </button>
-
                 <button
                   className="cancel-btn"
                   onClick={closeAll}
@@ -1138,7 +1033,6 @@ export default function Menu() {
           </>
         )}
 
-        {/* Delete Dish Confirmation Popup */}
         {dishBeingDeleted && (
           <>
             <div className="edit-overlay" onClick={closeAll}></div>
@@ -1147,12 +1041,10 @@ export default function Menu() {
               <p className="popup-subtitle warning">
                 This action cannot be undone
               </p>
-
               <p className="confirmation-text">
                 Are you sure you want to delete{" "}
                 <strong>{dishBeingDeleted.name}</strong>?
               </p>
-
               <div className="popup-buttons">
                 <button
                   className="delete-button"
@@ -1161,7 +1053,6 @@ export default function Menu() {
                 >
                   {isSubmitting ? "Deleting..." : "Yes, Delete"}
                 </button>
-
                 <button
                   className="cancel-btn"
                   onClick={closeAll}
@@ -1174,16 +1065,14 @@ export default function Menu() {
           </>
         )}
 
-        {/* Customer Menu Item Popup */}
         {selectedItem && (
           <MenuItemPopup
             item={selectedItem}
             hasTwoSizes={selectedCategoryHasTwoSizes}
-            onClose={handleClosePopup} // ← changed
+            onClose={handleClosePopup}
           />
         )}
       </main>
-
       <Footer />
     </div>
   );
