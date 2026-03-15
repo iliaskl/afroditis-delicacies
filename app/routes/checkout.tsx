@@ -1,3 +1,4 @@
+// app/routes/checkout.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Header from "../components/utils/header";
@@ -8,6 +9,7 @@ import { useUserProfile } from "../context/userContext/userProfile";
 import { useCart } from "../context/cartContext/cartContext";
 import {
   placeOrder,
+  getOrderById,
   getBookedTimesForDate,
   subscribeToBlockedDays,
   ALL_TIME_SLOTS,
@@ -15,135 +17,15 @@ import {
   dateKey,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
-import { addressService } from "../services/addressService";
 import type { AddressDetails } from "../services/addressService";
 import type { OrderItem, PaymentMethod } from "../types/types";
 import "../styles/checkout.css";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// Bothell, WA coordinates
 const BOTHELL_LAT = 47.7623;
 const BOTHELL_LNG = -122.2054;
 const MAX_DELIVERY_MILES = 50;
-
-// Haversine distance in miles between two lat/lng points
-function distanceMiles(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
-  const R = 3958.8; // Earth radius in miles
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Geocode an address string → {lat, lng} using Mapbox
-async function geocodeAddress(
-  address: string,
-): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-      address,
-    )}.json?access_token=${MAPBOX_TOKEN}&country=US&limit=1`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.error("Geocode error:", res.status);
-      return null;
-    }
-    const data = await res.json();
-    if (data.features && data.features.length > 0) {
-      const [lng, lat] = data.features[0].geometry.coordinates;
-      return { lat, lng };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-// The earliest delivery time slot available (10 AM) as minutes since midnight.
-const FIRST_SLOT_MINUTES = 10 * 60; // 10:00 AM
-
-/**
- * Returns the earliest calendar DATE a customer may select.
- *
- * Logic: compute the exact earliest moment (now + lead-time hours), then
- * check if any delivery slot (10 AM – 10 PM) exists on that day that is
- * still after the cutoff. If not, advance to the next day.
- *
- * Example: order placed at 11 PM, 1-item order → cutoff is 11 PM next day.
- * No slots on "next day" are after 11 PM (last slot is 10 PM), so the
- * earliest selectable date becomes the day after next.
- */
-function getEarliestDeliveryDate(totalItems: number): Date {
-  const now = new Date();
-  let hoursToAdd = 24;
-  if (totalItems >= 4 && totalItems <= 6) hoursToAdd = 72;
-  if (totalItems >= 7) hoursToAdd = 120;
-
-  const cutoff = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
-  const cutoffMins = cutoff.getHours() * 60 + cutoff.getMinutes();
-
-  // Start from the calendar day of the cutoff moment.
-  const candidate = new Date(cutoff);
-  candidate.setHours(0, 0, 0, 0);
-
-  // If the cutoff time is at or after the last slot (10 PM = 1320 min),
-  // no slot on that day works — advance one day.
-  const LAST_SLOT_MINUTES = 22 * 60; // 10:00 PM
-  if (cutoffMins >= LAST_SLOT_MINUTES) {
-    candidate.setDate(candidate.getDate() + 1);
-  }
-
-  return candidate;
-}
-
-/**
- * For the earliest selectable date only, returns the minimum time in
- * minutes-since-midnight that a slot must be AT OR AFTER to be selectable.
- * Returns 0 for any later date (all slots available).
- */
-function getEarliestSlotMinutes(
-  totalItems: number,
-  selectedDate: Date,
-): number {
-  const now = new Date();
-  let hoursToAdd = 24;
-  if (totalItems >= 4 && totalItems <= 6) hoursToAdd = 72;
-  if (totalItems >= 7) hoursToAdd = 120;
-
-  const cutoff = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
-
-  const cutoffDay = new Date(cutoff);
-  cutoffDay.setHours(0, 0, 0, 0);
-
-  const selDay = new Date(selectedDate);
-  selDay.setHours(0, 0, 0, 0);
-
-  // Only restrict slots on the exact cutoff day.
-  if (selDay.getTime() === cutoffDay.getTime()) {
-    return cutoff.getHours() * 60 + cutoff.getMinutes();
-  }
-  return 0;
-}
-
-// Build a calendar grid for a given month
-function buildCalendarDays(year: number, month: number): (Date | null)[] {
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const days: (Date | null)[] = [];
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
-  return days;
-}
 
 const MONTH_NAMES = [
   "January",
@@ -161,6 +43,146 @@ const MONTH_NAMES = [
 ];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Lead-time notice shown below the "Delivery Date & Time" section header
+const LEAD_TIME_NOTE: Record<string, string> = {
+  small: "Minimum 24 hours notice required.",
+  medium: "Minimum 72 hours notice required.",
+  large: "Minimum 5 days notice required.",
+};
+
+function getLeadTimeNote(totalItems: number): string {
+  if (totalItems >= 7) return LEAD_TIME_NOTE.large;
+  if (totalItems >= 4) return LEAD_TIME_NOTE.medium;
+  return LEAD_TIME_NOTE.small;
+}
+
+// ── Geo helpers ───────────────────────────────────────────────────────────────
+
+/** Haversine distance in miles between two lat/lng points. */
+function distanceMiles(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 3958.8;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Geocode an address string → {lat, lng} using Mapbox. */
+async function geocodeAddress(
+  address: string,
+): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=US&limit=1`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("Geocode error:", res.status);
+      return null;
+    }
+    const data = await res.json();
+    if (data.features?.length > 0) {
+      const [lng, lat] = data.features[0].geometry.coordinates;
+      return { lat, lng };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Lead-time / calendar helpers ──────────────────────────────────────────────
+
+function getLeadTimeHours(totalItems: number): number {
+  if (totalItems >= 7) return 120;
+  if (totalItems >= 4) return 72;
+  return 24;
+}
+
+/**
+ * Returns the earliest calendar DATE a customer may select.
+ *
+ * Computes (now + lead-time hours), then checks whether any delivery slot
+ * (10 AM – 10 PM) still falls after the cutoff on that day. If not, advances
+ * one day.
+ *
+ * Example: order placed at 11 PM with a 24-hour lead time → cutoff is
+ * 11 PM the next day. No slot exists after 11 PM (last slot is 10 PM),
+ * so the earliest selectable date becomes the day after next.
+ */
+function getEarliestDeliveryDate(totalItems: number): Date {
+  const cutoff = new Date(Date.now() + getLeadTimeHours(totalItems) * 3600_000);
+  const cutoffMins = cutoff.getHours() * 60 + cutoff.getMinutes();
+
+  const candidate = new Date(cutoff);
+  candidate.setHours(0, 0, 0, 0);
+
+  const LAST_SLOT_MINUTES = 22 * 60; // 10:00 PM
+  if (cutoffMins >= LAST_SLOT_MINUTES)
+    candidate.setDate(candidate.getDate() + 1);
+
+  return candidate;
+}
+
+/**
+ * For the earliest selectable date only, returns the minimum minutes-since-
+ * midnight a slot must reach to be selectable. Returns 0 for any later date.
+ */
+function getEarliestSlotMinutes(
+  totalItems: number,
+  selectedDate: Date,
+): number {
+  const cutoff = new Date(Date.now() + getLeadTimeHours(totalItems) * 3600_000);
+
+  const cutoffDay = new Date(cutoff);
+  cutoffDay.setHours(0, 0, 0, 0);
+
+  const selDay = new Date(selectedDate);
+  selDay.setHours(0, 0, 0, 0);
+
+  if (selDay.getTime() === cutoffDay.getTime()) {
+    return cutoff.getHours() * 60 + cutoff.getMinutes();
+  }
+  return 0;
+}
+
+/** Build a calendar grid for a given month (null = empty cell). */
+function buildCalendarDays(year: number, month: number): (Date | null)[] {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days: (Date | null)[] = Array(firstDay).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
+  return days;
+}
+
+// ── Shared UI ─────────────────────────────────────────────────────────────────
+
+/** Green checkmark icon reused in address confirmation rows. */
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -169,9 +191,7 @@ export default function Checkout() {
 
   // ── Redirect if not logged in ──
   useEffect(() => {
-    if (!user) {
-      navigate("/");
-    }
+    if (!user) navigate("/");
   }, [user, navigate]);
 
   // ── Form fields ──
@@ -179,6 +199,7 @@ export default function Checkout() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
   const [addressDetails, setAddressDetails] = useState<AddressDetails | null>(
     null,
   );
@@ -206,6 +227,8 @@ export default function Checkout() {
   const [addressMode, setAddressMode] = useState<"profile" | "custom">(
     "profile",
   );
+
+  // ── Submission ──
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
@@ -218,9 +241,8 @@ export default function Checkout() {
       setLastName(profile.lastName || "");
       setPhone(profile.phoneNumber || "");
     }
-    if (user?.email) {
-      setEmail(user.email);
-    }
+    if (user?.email) setEmail(user.email);
+
     if (profile?.address?.street) {
       const addr = profile.address;
       const formatted = `${addr.street}, ${addr.city}, ${addr.state} ${addr.zipCode}`;
@@ -237,15 +259,13 @@ export default function Checkout() {
     }
   }, [profile, user]);
 
-  // ── Total item count (for lead-time rule) ──
   const totalItems = cartItems.reduce(
     (sum, item) => sum + item.quantities.reduce((s, q) => s + q.quantity, 0),
     0,
   );
-
   const earliestDate = getEarliestDeliveryDate(totalItems);
 
-  // If the cart changes and the selected date is no longer valid, clear it.
+  // Clear selected date if cart changes and it's no longer valid
   useEffect(() => {
     if (!selectedDate) return;
     const d = new Date(selectedDate);
@@ -256,7 +276,8 @@ export default function Checkout() {
     }
   }, [totalItems]);
 
-  // ── Load booked times when date changes ──
+  // Load booked times when date changes; poll every 15 s so concurrent
+  // orders from other customers are reflected without a page reload
   useEffect(() => {
     if (!selectedDate) {
       setBookedTimes([]);
@@ -275,18 +296,14 @@ export default function Checkout() {
 
     setTimesLoading(true);
     refresh();
-
-    // Poll every 15 seconds so newly placed orders by other customers
-    // are reflected without requiring a page reload.
-    const interval = setInterval(refresh, 15000);
-
+    const interval = setInterval(refresh, 15_000);
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
   }, [selectedDate]);
 
-  // ── Countdown after success ──
+  // Countdown redirect after successful order
   useEffect(() => {
     if (!orderSuccess) return;
     if (countdown <= 0) {
@@ -302,6 +319,7 @@ export default function Checkout() {
     return () => unsub();
   }, []);
 
+  // ── Address handlers ──
   const handleAddressModeChange = (mode: "profile" | "custom") => {
     setAddressMode(mode);
     if (mode === "profile" && profile?.address?.street) {
@@ -316,21 +334,18 @@ export default function Checkout() {
         country: addr.country || "United States",
         formattedAddress: formatted,
       });
-      setAddressError(null);
     } else {
       setAddressInputValue("");
       setAddressDetails(null);
-      setAddressError(null);
     }
+    setAddressError(null);
   };
 
-  // ── Address validation (50-mile check) ──
   const handleAddressSelect = async (addr: AddressDetails) => {
     setAddressDetails(addr);
     setAddressInputValue(addr.formattedAddress);
     setAddressError(null);
     setAddressValidating(true);
-
     try {
       const coords = await geocodeAddress(addr.formattedAddress);
       if (!coords) {
@@ -365,36 +380,26 @@ export default function Checkout() {
     if (calendarMonth === 0) {
       setCalendarMonth(11);
       setCalendarYear((y) => y - 1);
-    } else {
-      setCalendarMonth((m) => m - 1);
-    }
+    } else setCalendarMonth((m) => m - 1);
   };
-
   const nextMonth = () => {
     if (calendarMonth === 11) {
       setCalendarMonth(0);
       setCalendarYear((y) => y + 1);
-    } else {
-      setCalendarMonth((m) => m + 1);
-    }
+    } else setCalendarMonth((m) => m + 1);
   };
 
   const isDayAvailable = (day: Date): boolean => {
     const d = new Date(day);
     d.setHours(0, 0, 0, 0);
-    if (d < earliestDate) return false;
-    if (blockedDays.includes(dateKey(d))) return false;
-    return true;
+    return d >= earliestDate && !blockedDays.includes(dateKey(d));
   };
 
-  const isDaySelected = (day: Date): boolean => {
-    if (!selectedDate) return false;
-    return (
-      day.getFullYear() === selectedDate.getFullYear() &&
-      day.getMonth() === selectedDate.getMonth() &&
-      day.getDate() === selectedDate.getDate()
-    );
-  };
+  const isDaySelected = (day: Date): boolean =>
+    !!selectedDate &&
+    day.getFullYear() === selectedDate.getFullYear() &&
+    day.getMonth() === selectedDate.getMonth() &&
+    day.getDate() === selectedDate.getDate();
 
   const handleDayClick = (day: Date) => {
     if (!isDayAvailable(day)) return;
@@ -402,16 +407,10 @@ export default function Checkout() {
     setSelectedTime(null);
   };
 
-  const handleTimeSelect = (slot: string) => {
-    if (!selectedDate) return;
-    setSelectedTime(slot);
-  };
-
   // ── Submit ──
   const handleSubmit = async () => {
     setSubmitError(null);
 
-    // Validation
     if (!firstName.trim() || !lastName.trim()) {
       setSubmitError("Please enter your full name.");
       return;
@@ -449,6 +448,7 @@ export default function Checkout() {
       return;
     }
 
+    // Re-check the slot right before submitting to catch last-second conflicts
     const { booked } = await getBookedTimesForDate(selectedDate);
     if (booked.includes(selectedTime)) {
       setSubmitError(
@@ -458,10 +458,9 @@ export default function Checkout() {
       setBookedTimes(booked);
       return;
     }
-    setSubmitting(true);
 
+    setSubmitting(true);
     try {
-      // Build order items from cart
       const items: OrderItem[] = cartItems.map((item) => ({
         menuItemId: item.menuItemId,
         dishName: item.dishName,
@@ -494,19 +493,13 @@ export default function Checkout() {
         deliveryTime: selectedTime,
       });
 
-      // Fetch the created order to pass to email functions
-      const { getOrderById } = await import("../services/orderService");
       const order = await getOrderById(orderId);
-
       if (order) {
         await emailService.sendOrderConfirmationToCustomer(order);
         await emailService.sendNewOrderNotificationToAdmin(order);
       }
 
-      // Clear cart
       await clearCart();
-
-      // Show success screen
       setOrderSuccess(true);
     } catch (error: any) {
       console.error("Order submission error:", error);
@@ -554,6 +547,7 @@ export default function Checkout() {
     );
   }
 
+  // ── Main checkout ──
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
@@ -644,17 +638,7 @@ export default function Checkout() {
 
                 {addressMode === "profile" && hasProfileAddress ? (
                   <div className="address-confirmed">
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
+                    <CheckIcon />
                     {addressDetails?.formattedAddress}
                   </div>
                 ) : (
@@ -670,17 +654,7 @@ export default function Checkout() {
                     )}
                     {addressDetails && !addressError && (
                       <div className="address-confirmed">
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="16"
-                          height="16"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                          <polyline points="22 4 12 14.01 9 11.01" />
-                        </svg>
+                        <CheckIcon />
                         {addressDetails.formattedAddress}
                       </div>
                     )}
@@ -696,14 +670,9 @@ export default function Checkout() {
               <section className="checkout-section">
                 <h2 className="checkout-section-title">Delivery Date & Time</h2>
                 <p className="checkout-section-note">
-                  {totalItems <= 3 && "Minimum 24 hours notice required."}
-                  {totalItems >= 4 &&
-                    totalItems <= 6 &&
-                    "Minimum 72 hours notice required."}
-                  {totalItems >= 7 && "Minimum 5 days notice required."}
+                  {getLeadTimeNote(totalItems)}
                 </p>
 
-                {/* Calendar */}
                 <div className="calendar-wrapper">
                   <div className="calendar-nav">
                     <button onClick={prevMonth} className="calendar-nav-btn">
@@ -741,7 +710,6 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                {/* Time Slots */}
                 {selectedDate && (
                   <div className="time-slots-wrapper">
                     <p className="time-slots-label">
@@ -761,18 +729,19 @@ export default function Checkout() {
                       <div className="time-slots-grid">
                         {ALL_TIME_SLOTS.map((slot) => {
                           const slotMins = timeToMinutes(slot);
-                          const minMins = selectedDate
-                            ? getEarliestSlotMinutes(totalItems, selectedDate)
-                            : 0;
-                          const tooEarly = minMins > 0 && slotMins <= minMins;
+                          const minMins = getEarliestSlotMinutes(
+                            totalItems,
+                            selectedDate,
+                          );
                           const blocked =
-                            tooEarly || bookedTimes.includes(slot);
+                            (minMins > 0 && slotMins <= minMins) ||
+                            bookedTimes.includes(slot);
                           const isSelected = !blocked && selectedTime === slot;
                           return (
                             <button
                               key={slot}
                               className={`time-slot ${blocked ? "blocked" : "open"} ${isSelected ? "selected" : ""}`}
-                              onClick={() => !blocked && handleTimeSelect(slot)}
+                              onClick={() => !blocked && setSelectedTime(slot)}
                               disabled={blocked}
                             >
                               {slot}
@@ -806,7 +775,7 @@ export default function Checkout() {
                     </span>
                     <span>PayPal</span>
                     <a
-                      href="https://paypal.me/afroditisdelicacies"
+                      href="https://paypal.me/AfroditiSDeli"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="payment-link"
@@ -828,7 +797,7 @@ export default function Checkout() {
                     </span>
                     <span>Venmo</span>
                     <a
-                      href="https://venmo.com/afroditisdelicacies"
+                      href="https://venmo.com/Afroditi-Kritikou"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="payment-link"
