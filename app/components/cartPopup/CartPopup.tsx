@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useCart } from "../../context/cartContext/cartContext";
-import { useAuth } from "../../context/authContext/authContext";
-import type { CartItem } from "../../types/types";
 import "../../styles/cartPopup.css";
 
 interface CartPopupProps {
@@ -10,8 +8,7 @@ interface CartPopupProps {
   onClose: () => void;
 }
 
-const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
   const {
     cartItems,
     cartTotal,
@@ -20,7 +17,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
     clearCart,
     loading,
   } = useCart();
-  const [editingItem, setEditingItem] = useState<string | null>(null);
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -61,7 +57,7 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
   };
 
   const handleProceedToCheckout = () => {
-    onClose(); // close the cart popup first
+    onClose();
     document.body.classList.remove("modal-open");
     navigate("/checkout");
   };
@@ -69,7 +65,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
   return (
     <div className="cart-overlay" onClick={onClose}>
       <div className="cart-popup" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="cart-header">
           <h2 className="cart-title">Your Cart</h2>
           <button
@@ -91,7 +86,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Cart Content */}
         <div className="cart-content">
           {loading ? (
             <div className="cart-loading">
@@ -130,22 +124,17 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <>
-              {/* Clear Cart Button */}
-              {cartItems.length > 0 && (
-                <button
-                  className="clear-cart-btn"
-                  onClick={handleClearCart}
-                  disabled={loading}
-                >
-                  Clear Cart
-                </button>
-              )}
+              <button
+                className="clear-cart-btn"
+                onClick={handleClearCart}
+                disabled={loading}
+              >
+                Clear Cart
+              </button>
 
-              {/* Cart Items */}
               <div className="cart-items">
                 {cartItems.map((item) => (
                   <div key={item.id} className="cart-item">
-                    {/* Item Image */}
                     <div className="cart-item-image">
                       {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.dishName} />
@@ -167,7 +156,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
                       )}
                     </div>
 
-                    {/* Item Details */}
                     <div className="cart-item-details">
                       <h3 className="cart-item-name">{item.dishName}</h3>
                       <p className="cart-item-category">{item.category}</p>
@@ -178,7 +166,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
                         </p>
                       )}
 
-                      {/* Size / Quantity rows */}
                       <div className="cart-item-sizes">
                         {item.quantities.map((qty) => (
                           <div key={qty.size} className="cart-item-size-row">
@@ -230,7 +217,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    {/* Remove Button */}
                     <button
                       className="cart-item-remove"
                       onClick={() => handleRemoveItem(item.id)}
@@ -258,7 +244,6 @@ const CartPopup: React.FC<CartPopupProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Footer with Total and Checkout */}
         {cartItems.length > 0 && (
           <div className="cart-footer">
             <div className="cart-total-section">

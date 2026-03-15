@@ -1,3 +1,4 @@
+// app/routes/orders.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Header from "../components/utils/header";
@@ -126,7 +127,6 @@ function OrderRow({
 
   const handleToggle = async () => {
     setExpanded((prev) => !prev);
-    // Mark as viewed when admin first expands a new order
     if (!expanded && order.isNewForAdmin) {
       await markOrderViewedByAdmin(order.id);
     }
@@ -142,7 +142,6 @@ function OrderRow({
 
   return (
     <div className={`order-row ${order.isNewForAdmin ? "order-row-new" : ""}`}>
-      {/* ── Summary Row (always visible) ── */}
       <div className="order-row-summary">
         <div className="order-row-left">
           {order.isNewForAdmin && (
@@ -179,7 +178,6 @@ function OrderRow({
             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
           </span>
 
-          {/* Deliver + Scrap buttons — visible inline on active rows */}
           {showDeliverButton && (
             <>
               <button
@@ -246,11 +244,9 @@ function OrderRow({
         </div>
       </div>
 
-      {/* ── Expanded Detail ── */}
       {expanded && (
         <div className="order-row-detail">
           <div className="order-detail-grid">
-            {/* Customer Info */}
             <div className="order-detail-section">
               <h4>Customer</h4>
               <p>{order.customerName}</p>
@@ -258,14 +254,12 @@ function OrderRow({
               <p>{order.customerPhone}</p>
             </div>
 
-            {/* Delivery Info */}
             <div className="order-detail-section">
               <h4>Delivery</h4>
               <p>{formatDateTime(order.deliveryDate, order.deliveryTime)}</p>
               <p>{order.deliveryAddress.fullAddress}</p>
             </div>
 
-            {/* Order Meta */}
             <div className="order-detail-section">
               <h4>Order Info</h4>
               <p>Placed: {formatOrderDate(order.orderDate)}</p>
@@ -279,7 +273,6 @@ function OrderRow({
             </div>
           </div>
 
-          {/* Items */}
           <div className="order-items-list">
             <h4>Items Ordered</h4>
             {order.items.map((item, i) => (
@@ -305,7 +298,6 @@ function OrderRow({
             ))}
           </div>
 
-          {/* Approve / Decline buttons for new (pending) orders */}
           {showApproveDecline && (
             <div className="order-actions">
               {!isOrderExpired(order) && (
@@ -454,8 +446,6 @@ export default function Orders() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Confirm dialog state
   const [confirmState, setConfirmState] = useState<{
     type: "approve" | "decline" | "deliver" | "scrap";
     order: Order;
@@ -467,27 +457,21 @@ export default function Orders() {
   const [activePage, setActivePage] = useState(0);
   const [inactivePage, setInactivePage] = useState(0);
 
-  // Redirect non-admins
   useEffect(() => {
     if (user && profile && !isAdmin) {
       navigate("/");
     }
   }, [user, profile, isAdmin, navigate]);
 
-  // Subscribe to real-time orders
   useEffect(() => {
     if (!isAdmin) return;
-
     const unsubscribe = subscribeToAllOrders((allOrders) => {
       setOrders(allOrders);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, [isAdmin]);
 
-  // ── Categorise orders ──
-  // Reset to page 0 if current page would be out of bounds (handled per section)
   const newOrders = orders
     .filter((o) => o.status === "pending")
     .sort((a, b) => {
@@ -499,6 +483,7 @@ export default function Orders() {
       );
       return dateA.getTime() - dateB.getTime();
     });
+
   const activeOrders = orders
     .filter((o) => o.status === "active")
     .sort((a, b) => {
@@ -510,6 +495,7 @@ export default function Orders() {
       );
       return dateA.getTime() - dateB.getTime();
     });
+
   const inactiveOrders = orders
     .filter((o) => o.status === "declined" || o.status === "delivered")
     .sort((a, b) => {
@@ -522,7 +508,6 @@ export default function Orders() {
       return dateB.getTime() - dateA.getTime();
     });
 
-  // Clamp pages if orders shrink
   const clampedNewPage = Math.min(
     newPage,
     Math.max(0, Math.ceil(newOrders.length / PAGE_SIZE) - 1),
@@ -549,9 +534,6 @@ export default function Orders() {
     (clampedInactivePage + 1) * PAGE_SIZE,
   );
 
-  // ── Handlers ──
-
-  // ── Handlers ──
   const handleApprove = (order: Order) => {
     setConfirmState({ type: "approve", order });
   };
@@ -568,13 +550,12 @@ export default function Orders() {
   const handleScrap = (order: Order) => {
     setConfirmState({ type: "scrap", order });
   };
+
   const handleConfirm = async () => {
     if (!confirmState) return;
     setActionLoading(true);
-
     try {
       const { type, order } = confirmState;
-
       if (type === "approve") {
         await approveOrder(order.id);
         const { getOrderById } = await import("../services/orderService");
@@ -613,13 +594,11 @@ export default function Orders() {
     setDeclineNote("");
   };
 
-  // ── Render ──
   if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-
       <main className="orders-page">
         <div className="orders-container">
           <div className="orders-header">
@@ -642,7 +621,6 @@ export default function Orders() {
             </div>
           ) : (
             <div className="orders-sections">
-              {/* NEW */}
               <OrderSection
                 title="New Orders"
                 orders={pagedNewOrders}
@@ -659,8 +637,6 @@ export default function Orders() {
                 pageSize={PAGE_SIZE}
                 onPageChange={setNewPage}
               />
-
-              {/* ACTIVE */}
               <OrderSection
                 title="Active Orders"
                 orders={pagedActiveOrders}
@@ -676,8 +652,6 @@ export default function Orders() {
                 pageSize={PAGE_SIZE}
                 onPageChange={setActivePage}
               />
-
-              {/* INACTIVE */}
               <OrderSection
                 title="Inactive Orders"
                 orders={pagedInactiveOrders}
@@ -699,7 +673,6 @@ export default function Orders() {
 
       <Footer />
 
-      {/* ── Confirm Dialogs ── */}
       {confirmState?.type === "approve" && (
         <ConfirmDialog
           message={`Approve order ${confirmState.order.orderCode} for ${confirmState.order.customerName}?`}
@@ -708,7 +681,6 @@ export default function Orders() {
           onCancel={handleCancelConfirm}
         />
       )}
-
       {confirmState?.type === "decline" && (
         <ConfirmDialog
           message={`Decline order ${confirmState.order.orderCode} for ${confirmState.order.customerName}?`}
@@ -732,7 +704,6 @@ export default function Orders() {
           }
         />
       )}
-
       {confirmState?.type === "deliver" && (
         <ConfirmDialog
           message={`Mark order ${confirmState.order.orderCode} as delivered?`}
@@ -741,7 +712,6 @@ export default function Orders() {
           onCancel={handleCancelConfirm}
         />
       )}
-
       {confirmState?.type === "scrap" && (
         <ConfirmDialog
           message={`Scrap order ${confirmState.order.orderCode} for ${confirmState.order.customerName}? This will cancel the order and free up the time slot.`}

@@ -15,30 +15,25 @@ interface MenuItemPopupProps {
   onClose: () => void;
 }
 
-const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
-  item,
-  hasTwoSizes,
-  onClose,
-}) => {
+const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
   const { user } = useAuth();
   const { addToCart } = useCart();
 
-  // Determine if item actually has two sizes with valid prices
   const actuallyHasTwoSizes =
     hasTwoSizes && item.secondPrice && item.secondPrice > 0;
 
-  // State for quantities - support both single and two-size items
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({
     single: 0,
     large: 0,
     small: 0,
   });
-
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
+
+  const MAX_INSTRUCTIONS_LENGTH = 140;
 
   useEffect(() => {
     if (!user) return;
@@ -65,41 +60,27 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
     }
   };
 
-  const MAX_INSTRUCTIONS_LENGTH = 140;
+  const totalPrice = actuallyHasTwoSizes
+    ? quantities.large * item.price + quantities.small * (item.secondPrice || 0)
+    : quantities.single * item.price;
 
-  // Calculate total based on selected quantities
-  const calculateTotal = (): number => {
-    if (actuallyHasTwoSizes) {
-      // ← Changed from hasTwoSizes
-      const largeTotal = quantities.large * item.price;
-      const smallTotal = quantities.small * (item.secondPrice || 0);
-      return largeTotal + smallTotal;
-    } else {
-      return quantities.single * item.price;
-    }
-  };
-
-  const totalPrice = calculateTotal();
   const hasSelection = actuallyHasTwoSizes
     ? quantities.large > 0 || quantities.small > 0
     : quantities.single > 0;
 
-  // Handle quantity change
   const updateQuantity = (size: string, delta: number) => {
-    setQuantities((prev) => {
-      const newQuantity = Math.max(0, prev[size] + delta);
-      return { ...prev, [size]: newQuantity };
-    });
+    setQuantities((prev) => ({
+      ...prev,
+      [size]: Math.max(0, prev[size] + delta),
+    }));
     setError(null);
   };
 
-  // Handle add to cart
   const handleAddToCart = async () => {
     if (!user) {
       setError("Please sign in to add items to your cart");
       return;
     }
-
     if (!hasSelection) {
       setError("Please select at least one item");
       return;
@@ -109,12 +90,9 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
       setLoading(true);
       setError(null);
 
-      // Build quantities array for cart
-      // Build quantities array for cart
       const cartQuantities: CartItemQuantity[] = [];
 
       if (actuallyHasTwoSizes) {
-        // ← Changed from hasTwoSizes
         if (quantities.large > 0) {
           cartQuantities.push({
             size: "Large",
@@ -139,7 +117,6 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
         }
       }
 
-      // Add to cart
       await addToCart({
         menuItemId: item.id,
         dishName: item.name,
@@ -149,30 +126,30 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
         specialInstructions: specialInstructions.trim(),
       });
 
-      // Success - close popup
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to add to cart:", err);
-      setError(err.message || "Failed to add to cart. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to add to cart. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle special instructions change
   const handleInstructionsChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
-    const value = e.target.value;
-    if (value.length <= MAX_INSTRUCTIONS_LENGTH) {
-      setSpecialInstructions(value);
+    if (e.target.value.length <= MAX_INSTRUCTIONS_LENGTH) {
+      setSpecialInstructions(e.target.value);
     }
   };
 
   return (
     <div className="menu-item-overlay" onClick={onClose}>
       <div className="menu-item-popup" onClick={(e) => e.stopPropagation()}>
-        {/* Dish Image */}
         {item.imgPath ? (
           <img
             src={item.imgPath}
@@ -195,11 +172,9 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
           </div>
         )}
 
-        {/* Content */}
         <div className="popup-content">
-          {/* Dish Name */}
           <h2 className="popup-dish-title">{item.name}</h2>
-          {/* Favorite Button - logged in users only */}
+
           {user && (
             <div
               style={{
@@ -234,14 +209,11 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
             </div>
           )}
 
-          {/* Options Title */}
           <p className="popup-options-title">Options:</p>
 
-          {/* Size Selection */}
           <div className="size-options">
             {actuallyHasTwoSizes ? (
               <>
-                {/* Large Size */}
                 <div className="size-option">
                   <div className="size-info">
                     <span className="size-label">Large</span>
@@ -267,7 +239,6 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
                   </div>
                 </div>
 
-                {/* Small Size */}
                 <div className="size-option">
                   <div className="size-info">
                     <span className="size-label">Small</span>
@@ -296,7 +267,6 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
                 </div>
               </>
             ) : (
-              /* Single Size - NO SIZE LABEL, just quantity controls */
               <div className="size-option single-size-option">
                 <div className="size-info">
                   <span className="size-price">${item.price.toFixed(2)}</span>
@@ -323,7 +293,6 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
             )}
           </div>
 
-          {/* Special Instructions */}
           <div className="special-instructions-section">
             <label
               htmlFor="special-instructions"
@@ -344,14 +313,12 @@ const MenuItemPopup: React.FC<MenuItemPopupProps> = ({
             </div>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="no-selection-message">
               <p>{error}</p>
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="popup-actions">
             <button
               className="cancel-popup-btn"
