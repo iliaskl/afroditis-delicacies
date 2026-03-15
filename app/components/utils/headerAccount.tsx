@@ -1,3 +1,8 @@
+// app/components/utils/headerAccount.tsx
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/authContext/authContext";
+import AddressAutocomplete from "../addressAutocomplete/AddressAutocomplete";
+import type { AddressDetails } from "../../services/addressService";
 import {
   getUserFavorites,
   removeFavorite,
@@ -7,20 +12,110 @@ import {
   subscribeToBlockedDays,
   blockDay,
   unblockDay,
+  dateKey,
 } from "../../services/orderService";
-import type { Order } from "../../types/types";
 import { getMenuData } from "../../services/menuService";
-import type { MenuItem } from "../../types/types";
-import { useState, useEffect } from "react";
-import { useAuth } from "../../context/authContext/authContext";
-import AddressAutocomplete from "../addressAutocomplete/AddressAutocomplete";
-import type { AddressDetails } from "../../services/addressService";
 import { getAnalytics } from "../../services/analyticsService";
 import type { AnalyticsData } from "../../services/analyticsService";
+import type { Order, MenuItem } from "../../types/types";
 import "./headerAccount.css";
 
-// Mapbox access token
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const VIEW_TITLES: Record<ProfileView, string> = {
+  main: "My Account",
+  manageCalendar: "Manage Calendar",
+  favorites: "My Favorites",
+  orderHistory: "Order History",
+  accountSettings: "Account Settings",
+  analytics: "Business Analytics",
+  forgotPassword: "Reset Password",
+};
+
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  active: "Approved",
+  declined: "Declined",
+  delivered: "Delivered",
+};
+
+const ORDER_STATUS_CLASS: Record<string, string> = {
+  pending: "order-history-status-pending",
+  active: "order-history-status-active",
+  declined: "order-history-status-declined",
+  delivered: "order-history-status-delivered",
+};
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  pay_on_delivery: "Cash or Check on Delivery",
+  venmo: "Venmo",
+  paypal: "PayPal",
+};
+
+// ── SVG icon paths ────────────────────────────────────────────────────────────
+
+const EYE_OPEN_PATH =
+  "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
+
+const EYE_CLOSED_PATH =
+  "M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z";
+
+// ── Shared subcomponents ──────────────────────────────────────────────────────
+
+function EyeToggle({
+  visible,
+  onToggle,
+}: {
+  visible: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="password-toggle"
+      onClick={onToggle}
+      aria-label={visible ? "Hide password" : "Show password"}
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20">
+        <path
+          fill="currentColor"
+          d={visible ? EYE_CLOSED_PATH : EYE_OPEN_PATH}
+        />
+      </svg>
+    </button>
+  );
+}
+
+function ChevronRight() {
+  return (
+    <svg className="chevron" viewBox="0 0 24 24" width="20" height="20">
+      <path
+        fill="currentColor"
+        d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
+      />
+    </svg>
+  );
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface HeaderAccountProps {
   isOpen: boolean;
@@ -36,6 +131,18 @@ type ProfileView =
   | "analytics"
   | "forgotPassword";
 
+// ── Calendar helper ───────────────────────────────────────────────────────────
+
+function buildAdminCalendarDays(year: number, month: number): (Date | null)[] {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days: (Date | null)[] = Array(firstDay).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
+  return days;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
   const {
     user,
@@ -50,25 +157,30 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     changePassword,
     deleteAccount,
   } = useAuth();
+
   const isAdmin = user && userProfile?.role === "admin";
   const isGoogleUser = user?.providerData?.some(
     (p) => p.providerId === "google.com",
   );
 
+  // ── UI state ──
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [resetEmail, setResetEmail] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<ProfileView>("main");
+
+  // ── Analytics ──
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // ── Form data ──
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -89,19 +201,25 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // ── Favorites ──
   const [favoriteItems, setFavoriteItems] = useState<MenuItem[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
+  // ── Order history ──
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<Order | null>(null);
+
+  // ── Admin calendar ──
   const [blockedDays, setBlockedDays] = useState<string[]>([]);
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
+  // ── Effects ──
   useEffect(() => {
     if (currentView !== "manageCalendar") return;
     const unsub = subscribeToBlockedDays(setBlockedDays);
@@ -117,23 +235,19 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       .finally(() => setOrdersLoading(false));
   }, [currentView, user]);
 
-  // Add useEffect to load when navigating to favorites view:
   useEffect(() => {
     if (currentView !== "favorites" || !user) return;
-
     setFavoritesLoading(true);
     Promise.all([getUserFavorites(user.uid), getMenuData()])
       .then(([favIds, menuData]) => {
-        const favDishes = menuData.items.filter((item) =>
-          favIds.includes(item.id),
+        setFavoriteItems(
+          menuData.items.filter((item) => favIds.includes(item.id)),
         );
-        setFavoriteItems(favDishes);
       })
       .catch(console.error)
       .finally(() => setFavoritesLoading(false));
   }, [currentView, user]);
 
-  // Load user profile data into settings when profile is available
   useEffect(() => {
     if (userProfile) {
       setSettingsData({
@@ -151,55 +265,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     }
   }, [userProfile, user]);
 
-  // ── Admin calendar helpers ──
-  function calendarDateKey(date: Date): string {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  }
-
-  function buildAdminCalendarDays(
-    year: number,
-    month: number,
-  ): (Date | null)[] {
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days: (Date | null)[] = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
-    return days;
-  }
-
-  const ADMIN_MONTH_NAMES = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const ADMIN_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  const handleToggleDay = async (day: Date) => {
-    const key = calendarDateKey(day);
-    setCalendarLoading(true);
-    try {
-      if (blockedDays.includes(key)) {
-        await unblockDay(day);
-      } else {
-        await blockDay(day);
-      }
-    } catch (err) {
-      console.error("Failed to toggle day:", err);
-    } finally {
-      setCalendarLoading(false);
-    }
-  };
-
+  // ── Admin calendar ──
   const adminCalendarDays = buildAdminCalendarDays(calendarYear, calendarMonth);
 
   const prevAdminMonth = () => {
@@ -208,7 +274,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       setCalendarYear((y) => y - 1);
     } else setCalendarMonth((m) => m - 1);
   };
-
   const nextAdminMonth = () => {
     if (calendarMonth === 11) {
       setCalendarMonth(0);
@@ -216,12 +281,24 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     } else setCalendarMonth((m) => m + 1);
   };
 
+  const handleToggleDay = async (day: Date) => {
+    const key = dateKey(day);
+    setCalendarLoading(true);
+    try {
+      blockedDays.includes(key) ? await unblockDay(day) : await blockDay(day);
+    } catch (err) {
+      console.error("Failed to toggle day:", err);
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  // ── Favorites ──
   const handleRemoveFavorite = async (menuItemId: string) => {
     if (!user) return;
     setRemovingId(menuItemId);
     try {
       await removeFavorite(user.uid, menuItemId);
-      // Remove from local state immediately — no reload needed
       setFavoriteItems((prev) => prev.filter((item) => item.id !== menuItemId));
     } catch (err) {
       console.error("Failed to remove favorite:", err);
@@ -230,21 +307,16 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // ── Form input handlers ──
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
   };
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setSettingsData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setSettingsData((prev) => ({ ...prev, [name]: value }));
     setError(null);
   };
 
@@ -259,50 +331,41 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     setError(null);
   };
 
+  // ── Auth form validation ──
   const validateForm = (): boolean => {
     if (!formData.email || !formData.password) {
       setError("Email and password are required");
       return false;
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setError("Please enter a valid email address");
       return false;
     }
-
     if (!isLogin) {
       if (!formData.firstName || !formData.lastName) {
         setError("First name and last name are required");
         return false;
       }
-
-      // Phone number is now required for registration
-      if (!formData.phoneNumber || formData.phoneNumber.trim() === "") {
+      if (!formData.phoneNumber?.trim()) {
         setError("Phone number is required");
         return false;
       }
     }
-
     return true;
   };
 
+  // ── Auth submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-
     if (!validateForm()) return;
-
     setLoading(true);
-
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
         setSuccess("Successfully logged in!");
-        setTimeout(() => {
-          onClose();
-        }, 1500);
+        setTimeout(onClose, 1500);
       } else {
         await register({
           firstName: formData.firstName,
@@ -324,13 +387,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
-
     try {
       await loginWithGoogle();
       setSuccess("Successfully signed in with Google!");
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+      setTimeout(onClose, 1500);
     } catch (err: any) {
       if (err.message !== "Sign-in cancelled") {
         setError(err.message || "Failed to sign in with Google");
@@ -340,36 +400,30 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // ── Settings submit ──
   const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
     setLoading(true);
 
-    // Scroll modal content to top so user sees messages
     const modalContent = document.querySelector(".auth-modal-content");
     if (modalContent) modalContent.scrollTop = 0;
 
     try {
-      // Validate password fields before doing anything
       if (settingsData.confirmPassword && !settingsData.newPassword) {
         setError("Please enter a new password to go with your confirmation.");
-        setLoading(false);
         return;
       }
-
       if (settingsData.newPassword && !settingsData.confirmPassword) {
         setError("Please confirm your new password.");
-        setLoading(false);
         return;
       }
-
       if (
         settingsData.newPassword &&
         settingsData.newPassword !== settingsData.confirmPassword
       ) {
         setError("Passwords do not match.");
-        setLoading(false);
         return;
       }
 
@@ -378,25 +432,21 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       if (
         settingsData.firstName &&
         settingsData.firstName !== userProfile?.firstName
-      ) {
+      )
         updates.firstName = settingsData.firstName;
-      }
       if (
         settingsData.lastName &&
         settingsData.lastName !== userProfile?.lastName
-      ) {
+      )
         updates.lastName = settingsData.lastName;
-      }
       if (updates.firstName || updates.lastName) {
         updates.displayName = `${settingsData.firstName || userProfile?.firstName} ${settingsData.lastName || userProfile?.lastName}`;
       }
-
       if (
         settingsData.phoneNumber &&
         settingsData.phoneNumber !== userProfile?.phoneNumber
-      ) {
+      )
         updates.phoneNumber = settingsData.phoneNumber;
-      }
 
       const addressChanged =
         settingsData.street !== (userProfile?.address?.street || "") ||
@@ -420,12 +470,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
         await updateProfile(updates);
         successMessage = "Profile updated successfully!";
       }
-
       if (settingsData.email && settingsData.email !== user?.email) {
         await changeEmail(settingsData.email);
         successMessage = "Email updated successfully!";
       }
-
       if (settingsData.newPassword) {
         await changePassword(settingsData.newPassword);
         successMessage = "Password updated successfully!";
@@ -436,9 +484,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
         }));
       }
 
-      if (successMessage) {
-        setSuccess(successMessage);
-      }
+      if (successMessage) setSuccess(successMessage);
     } catch (err: any) {
       setError(err.message || "Failed to update settings.");
     } finally {
@@ -536,54 +582,35 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
       {user ? (
-        // Logged in view
         <div
           className="auth-modal-container"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="auth-modal-header">
-            {currentView !== "main" ? (
-              <button
-                className="back-button"
-                onClick={() => navigateToView("main")}
-                aria-label="Back"
-              >
-                <svg viewBox="0 0 24 24" width="24" height="24">
-                  <path
-                    fill="currentColor"
-                    d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
-                  />
-                </svg>
-              </button>
-            ) : (
-              <button
-                className="back-button"
-                onClick={onClose}
-                aria-label="Close"
-              >
-                <svg viewBox="0 0 24 24" width="24" height="24">
-                  <path
-                    fill="currentColor"
-                    d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
-                  />
-                </svg>
-              </button>
-            )}
-            <h2 className="auth-modal-title">
-              {currentView === "main" && "My Account"}
-              {currentView === "manageCalendar" && "Manage Calendar"}
-              {currentView === "favorites" && "My Favorites"}
-              {currentView === "orderHistory" && "Order History"}{" "}
-              {currentView === "accountSettings" && "Account Settings"}
-              {currentView === "analytics" && "Business Analytics"}
-              {currentView === "forgotPassword" && "Reset Password"}
-            </h2>
+            <button
+              className="back-button"
+              onClick={() =>
+                currentView !== "main" ? navigateToView("main") : onClose()
+              }
+              aria-label={currentView !== "main" ? "Back" : "Close"}
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path
+                  fill="currentColor"
+                  d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+                />
+              </svg>
+            </button>
+            <h2 className="auth-modal-title">{VIEW_TITLES[currentView]}</h2>
           </div>
 
           <div className="auth-modal-content">
+            {/* ── Main menu ── */}
             {currentView === "main" && (
               <div className="user-info">
                 <h3>Welcome, {userProfile?.firstName || user.displayName}!</h3>
@@ -615,17 +642,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           />
                         </svg>
                         <span>Manage Calendar</span>
-                        <svg
-                          className="chevron"
-                          viewBox="0 0 24 24"
-                          width="20"
-                          height="20"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                          />
-                        </svg>
+                        <ChevronRight />
                       </button>
 
                       <button
@@ -644,17 +661,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           />
                         </svg>
                         <span>Business Analytics</span>
-                        <svg
-                          className="chevron"
-                          viewBox="0 0 24 24"
-                          width="20"
-                          height="20"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                          />
-                        </svg>
+                        <ChevronRight />
                       </button>
                     </>
                   ) : (
@@ -674,17 +681,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                         />
                       </svg>
                       <span>My Favorites</span>
-                      <svg
-                        className="chevron"
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                        />
-                      </svg>
+                      <ChevronRight />
                     </button>
                   )}
 
@@ -705,19 +702,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                         />
                       </svg>
                       <span>Order History</span>
-                      <svg
-                        className="chevron"
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                        />
-                      </svg>
+                      <ChevronRight />
                     </button>
                   )}
+
                   <button
                     className="profile-menu-item"
                     onClick={() => navigateToView("accountSettings")}
@@ -734,17 +722,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                       />
                     </svg>
                     <span>Account Settings</span>
-                    <svg
-                      className="chevron"
-                      viewBox="0 0 24 24"
-                      width="20"
-                      height="20"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
-                      />
-                    </svg>
+                    <ChevronRight />
                   </button>
 
                   <button
@@ -758,6 +736,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
+            {/* ── Favorites ── */}
             {currentView === "favorites" && (
               <div className="favorites-view">
                 {favoritesLoading ? (
@@ -808,6 +787,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
+            {/* ── Manage Calendar ── */}
             {currentView === "manageCalendar" && (
               <div className="manage-calendar-view">
                 <p className="calendar-manage-note">
@@ -828,7 +808,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                       className="admin-cal-month-label-btn"
                       onClick={() => setShowMonthPicker((v) => !v)}
                     >
-                      {ADMIN_MONTH_NAMES[calendarMonth]} {calendarYear}
+                      {MONTH_NAMES[calendarMonth]} {calendarYear}
                       <svg
                         viewBox="0 0 24 24"
                         width="14"
@@ -859,7 +839,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           </button>
                         </div>
                         <div className="admin-cal-month-grid">
-                          {ADMIN_MONTH_NAMES.map((name, i) => (
+                          {MONTH_NAMES.map((name, i) => (
                             <button
                               key={name}
                               className={`admin-cal-month-option ${i === calendarMonth ? "active" : ""}`}
@@ -896,14 +876,14 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="admin-cal-grid">
-                  {ADMIN_DAY_NAMES.map((d) => (
+                  {DAY_NAMES.map((d) => (
                     <div key={d} className="admin-cal-day-name">
                       {d}
                     </div>
                   ))}
                   {adminCalendarDays.map((day, i) => {
                     if (!day) return <div key={`empty-${i}`} />;
-                    const key = calendarDateKey(day);
+                    const key = dateKey(day);
                     const isBlocked = blockedDays.includes(key);
                     const isPast =
                       day < new Date(new Date().setHours(0, 0, 0, 0));
@@ -937,6 +917,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
+            {/* ── Analytics ── */}
             {currentView === "analytics" && (
               <div className="analytics-view">
                 {analyticsLoading ? (
@@ -945,7 +926,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                   <p className="empty-state">Could not load analytics.</p>
                 ) : (
                   <>
-                    {/* Revenue + Orders row */}
                     <div className="analytics-grid-2">
                       <div className="analytics-card analytics-card-green">
                         <span className="analytics-label">
@@ -963,7 +943,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    {/* Orders comparison */}
                     <div className="analytics-card analytics-card-gold">
                       <span className="analytics-label">Orders This Month</span>
                       <span className="analytics-value">
@@ -994,7 +973,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                       </span>
                     </div>
 
-                    {/* Status breakdown */}
                     <div className="analytics-section">
                       <h4 className="analytics-section-title">
                         Order Status Breakdown
@@ -1023,72 +1001,64 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    {/* Top dishes */}
                     {analytics.topDishes.length > 0 && (
                       <div className="analytics-section">
                         <h4 className="analytics-section-title">
                           Most Popular Dishes
                         </h4>
                         <div className="analytics-bar-list">
-                          {analytics.topDishes.map((d, i) => {
-                            const max = analytics.topDishes[0].count;
-                            return (
-                              <div key={d.name} className="analytics-bar-row">
-                                <span className="analytics-bar-rank">
-                                  #{i + 1}
-                                </span>
-                                <span className="analytics-bar-label">
-                                  {d.name}
-                                </span>
-                                <div className="analytics-bar-track">
-                                  <div
-                                    className="analytics-bar-fill"
-                                    style={{
-                                      width: `${(d.count / max) * 100}%`,
-                                    }}
-                                  />
-                                </div>
-                                <span className="analytics-bar-count">
-                                  {d.count}
-                                </span>
+                          {analytics.topDishes.map((d, i) => (
+                            <div key={d.name} className="analytics-bar-row">
+                              <span className="analytics-bar-rank">
+                                #{i + 1}
+                              </span>
+                              <span className="analytics-bar-label">
+                                {d.name}
+                              </span>
+                              <div className="analytics-bar-track">
+                                <div
+                                  className="analytics-bar-fill"
+                                  style={{
+                                    width: `${(d.count / analytics.topDishes[0].count) * 100}%`,
+                                  }}
+                                />
                               </div>
-                            );
-                          })}
+                              <span className="analytics-bar-count">
+                                {d.count}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Busiest days */}
                     {analytics.busiestDays.length > 0 && (
                       <div className="analytics-section">
                         <h4 className="analytics-section-title">
                           Busiest Delivery Days
                         </h4>
                         <div className="analytics-bar-list">
-                          {analytics.busiestDays.map((d, i) => {
-                            const max = analytics.busiestDays[0].count;
-                            return (
-                              <div key={d.day} className="analytics-bar-row">
-                                <span className="analytics-bar-rank">
-                                  #{i + 1}
-                                </span>
-                                <span className="analytics-bar-label">
-                                  {d.day}
-                                </span>
-                                <div className="analytics-bar-track">
-                                  <div
-                                    className="analytics-bar-fill analytics-bar-fill-blue"
-                                    style={{
-                                      width: `${(d.count / max) * 100}%`,
-                                    }}
-                                  />
-                                </div>
-                                <span className="analytics-bar-count">
-                                  {d.count}
-                                </span>
+                          {analytics.busiestDays.map((d, i) => (
+                            <div key={d.day} className="analytics-bar-row">
+                              <span className="analytics-bar-rank">
+                                #{i + 1}
+                              </span>
+                              <span className="analytics-bar-label">
+                                {d.day}
+                              </span>
+                              <div className="analytics-bar-track">
+                                <div
+                                  className="analytics-bar-fill analytics-bar-fill-blue"
+                                  style={{
+                                    width: `${(d.count / analytics.busiestDays[0].count) * 100}%`,
+                                  }}
+                                />
                               </div>
-                            );
-                          })}
+                              <span className="analytics-bar-count">
+                                {d.count}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -1097,6 +1067,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
+            {/* ── Order History ── */}
             {currentView === "orderHistory" && (
               <div className="order-history-view">
                 {ordersLoading ? (
@@ -1112,20 +1083,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                   <div className="order-history-list">
                     {orderHistory.map((order) => {
                       const statusLabel =
-                        {
-                          pending: "Pending",
-                          active: "Approved",
-                          declined: "Declined",
-                          delivered: "Delivered",
-                        }[order.status] ?? order.status;
+                        ORDER_STATUS_LABEL[order.status] ?? order.status;
                       const statusClass =
-                        {
-                          pending: "order-history-status-pending",
-                          active: "order-history-status-active",
-                          declined: "order-history-status-declined",
-                          delivered: "order-history-status-delivered",
-                        }[order.status] ?? "";
-                      const totalItems = order.items.reduce(
+                        ORDER_STATUS_CLASS[order.status] ?? "";
+                      const itemCount = order.items.reduce(
                         (sum, item) =>
                           sum +
                           item.quantities.reduce((s, q) => s + q.quantity, 0),
@@ -1168,7 +1129,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                               at {order.deliveryTime}
                             </p>
                             <p className="order-history-item-summary">
-                              {totalItems} item{totalItems !== 1 ? "s" : ""}:{" "}
+                              {itemCount} item{itemCount !== 1 ? "s" : ""}:{" "}
                               {order.items.map((i) => i.dishName).join(", ")}
                             </p>
                             <div className="order-history-footer">
@@ -1195,7 +1156,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                   </div>
                 )}
 
-                {/* ── Order Detail Modal ── */}
                 {expandedOrder && (
                   <div
                     className="order-detail-overlay"
@@ -1211,14 +1171,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                             {expandedOrder.orderCode}
                           </h3>
                           <span
-                            className={`order-history-status ${{ pending: "order-history-status-pending", active: "order-history-status-active", declined: "order-history-status-declined", delivered: "order-history-status-delivered" }[expandedOrder.status] ?? ""}`}
+                            className={`order-history-status ${ORDER_STATUS_CLASS[expandedOrder.status] ?? ""}`}
                           >
-                            {{
-                              pending: "Pending",
-                              active: "Approved",
-                              declined: "Declined",
-                              delivered: "Delivered",
-                            }[expandedOrder.status] ?? expandedOrder.status}
+                            {ORDER_STATUS_LABEL[expandedOrder.status] ??
+                              expandedOrder.status}
                           </span>
                         </div>
                         <button
@@ -1327,13 +1283,9 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           <div className="order-detail-row">
                             <span className="order-detail-label">Method</span>
                             <span className="order-detail-value">
-                              {expandedOrder.paymentMethod === "pay_on_delivery"
-                                ? "Cash or Check on Delivery"
-                                : expandedOrder.paymentMethod === "venmo"
-                                  ? "Venmo"
-                                  : expandedOrder.paymentMethod === "paypal"
-                                    ? "PayPal"
-                                    : expandedOrder.paymentMethod}
+                              {PAYMENT_METHOD_LABEL[
+                                expandedOrder.paymentMethod
+                              ] ?? expandedOrder.paymentMethod}
                             </span>
                           </div>
                         </div>
@@ -1365,6 +1317,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
+            {/* ── Account Settings ── */}
             {currentView === "accountSettings" && (
               <div className="account-settings-view">
                 {error && <div className="error-message">{error}</div>}
@@ -1373,7 +1326,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                 <form onSubmit={handleUpdateSettings} className="settings-form">
                   <div className="settings-section">
                     <h4>Personal Information</h4>
-
                     <div className="form-row">
                       <div className="form-group">
                         <label htmlFor="firstName">First Name</label>
@@ -1386,7 +1338,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           placeholder="Enter your first name"
                         />
                       </div>
-
                       <div className="form-group">
                         <label htmlFor="lastName">Last Name</label>
                         <input
@@ -1399,7 +1350,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                         />
                       </div>
                     </div>
-
                     <div className="form-group">
                       <label htmlFor="phoneNumber">
                         Phone Number <span className="required">*</span>
@@ -1418,7 +1368,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
 
                   <div className="settings-section">
                     <h4>Primary Delivery Address</h4>
-
                     <div className="form-group">
                       <label htmlFor="addressSearch">Search Address</label>
                       <AddressAutocomplete
@@ -1432,7 +1381,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                         mapboxToken={MAPBOX_TOKEN}
                       />
                     </div>
-
                     {settingsData.street && (
                       <div className="address-preview">
                         <p>
@@ -1449,7 +1397,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
 
                   <div className="settings-section">
                     <h4>Account Security</h4>
-
                     <div className="form-group">
                       <label htmlFor="email">Email Address</label>
                       <input
@@ -1461,7 +1408,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                         placeholder="your@email.com"
                       />
                     </div>
-
                     <div className="form-group">
                       <label htmlFor="newPassword">New Password</label>
                       <div className="password-input-wrapper">
@@ -1473,37 +1419,16 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           onChange={handleSettingsChange}
                           placeholder="Leave blank to keep current password"
                         />
-                        <button
-                          type="button"
-                          className="password-toggle"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          aria-label={
-                            showNewPassword ? "Hide password" : "Show password"
-                          }
-                        >
-                          {showNewPassword ? (
-                            <svg viewBox="0 0 24 24" width="20" height="20">
-                              <path
-                                fill="currentColor"
-                                d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg viewBox="0 0 24 24" width="20" height="20">
-                              <path
-                                fill="currentColor"
-                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                              />
-                            </svg>
-                          )}
-                        </button>
+                        <EyeToggle
+                          visible={showNewPassword}
+                          onToggle={() => setShowNewPassword((v) => !v)}
+                        />
                       </div>
                       <small className="password-hint">
                         Must be 6+ characters with uppercase, number, and
                         special character
                       </small>
                     </div>
-
                     <div className="form-group">
                       <label htmlFor="confirmPassword">
                         Confirm New Password
@@ -1517,34 +1442,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           onChange={handleSettingsChange}
                           placeholder="Confirm new password"
                         />
-                        <button
-                          type="button"
-                          className="password-toggle"
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                          aria-label={
-                            showConfirmPassword
-                              ? "Hide password"
-                              : "Show password"
-                          }
-                        >
-                          {showConfirmPassword ? (
-                            <svg viewBox="0 0 24 24" width="20" height="20">
-                              <path
-                                fill="currentColor"
-                                d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg viewBox="0 0 24 24" width="20" height="20">
-                              <path
-                                fill="currentColor"
-                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                              />
-                            </svg>
-                          )}
-                        </button>
+                        <EyeToggle
+                          visible={showConfirmPassword}
+                          onToggle={() => setShowConfirmPassword((v) => !v)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1556,7 +1457,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                   >
                     {loading ? "Saving Changes..." : "Save Changes"}
                   </button>
-                  {/* Danger Zone */}
+
                   <div className="danger-zone">
                     {!showDeleteConfirm ? (
                       <button
@@ -1622,6 +1523,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
       ) : (
+        // ── Logged-out view (auth forms) ──
         <div
           className="auth-modal-container"
           onClick={(e) => e.stopPropagation()}
@@ -1723,7 +1625,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           required={!isLogin}
                         />
                       </div>
-
                       <div className="form-group">
                         <label htmlFor="lastName">
                           Last Name <span className="required">*</span>
@@ -1738,7 +1639,6 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                           required={!isLogin}
                         />
                       </div>
-
                       <div className="form-group">
                         <label htmlFor="phoneNumber">
                           Phone Number <span className="required">*</span>
@@ -1785,30 +1685,10 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                         placeholder="Enter your password"
                         required
                       />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
-                      >
-                        {showPassword ? (
-                          <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path
-                              fill="currentColor"
-                              d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"
-                            />
-                          </svg>
-                        ) : (
-                          <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path
-                              fill="currentColor"
-                              d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                            />
-                          </svg>
-                        )}
-                      </button>
+                      <EyeToggle
+                        visible={showPassword}
+                        onToggle={() => setShowPassword((v) => !v)}
+                      />
                     </div>
                     {!isLogin && (
                       <small className="password-hint">
