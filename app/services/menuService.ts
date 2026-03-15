@@ -1,4 +1,3 @@
-// app/services/menuService.ts
 import {
   collection,
   getDocs,
@@ -14,9 +13,6 @@ import {
 import { db } from "../firebase/firebase";
 import type { MenuItem, MenuCategory } from "../types/types";
 
-/**
- * Upload a dish image to Cloudinary and return the public URL
- */
 export async function uploadDishImage(file: File): Promise<string> {
   try {
     const formData = new FormData();
@@ -27,16 +23,12 @@ export async function uploadDishImage(file: File): Promise<string> {
     );
     formData.append("folder", "dish-images");
 
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
       { method: "POST", body: formData },
     );
 
-    if (!response.ok) {
-      throw new Error("Upload failed");
-    }
-
+    if (!response.ok) throw new Error("Upload failed");
     const data = await response.json();
     return data.secure_url;
   } catch (error) {
@@ -45,20 +37,15 @@ export async function uploadDishImage(file: File): Promise<string> {
   }
 }
 
-/**
- * Get all menu data (categories and items)
- */
 export async function getMenuData(): Promise<{
   categories: MenuCategory[];
   items: MenuItem[];
   menuNote: string;
 }> {
   try {
-    // Fetch categories
-    const categoriesRef = collection(db, "categories");
-    const categoriesQuery = query(categoriesRef, orderBy("order", "asc"));
-    const categoriesSnapshot = await getDocs(categoriesQuery);
-
+    const categoriesSnapshot = await getDocs(
+      query(collection(db, "categories"), orderBy("order", "asc")),
+    );
     const categories: MenuCategory[] = categoriesSnapshot.docs.map((doc) => ({
       id: doc.id,
       name: doc.data().name,
@@ -66,11 +53,9 @@ export async function getMenuData(): Promise<{
       order: doc.data().order || 0,
     }));
 
-    // Fetch menu items
-    const menuItemsRef = collection(db, "menuItems");
-    const menuItemsQuery = query(menuItemsRef, orderBy("order", "asc"));
-    const menuItemsSnapshot = await getDocs(menuItemsQuery);
-
+    const menuItemsSnapshot = await getDocs(
+      query(collection(db, "menuItems"), orderBy("order", "asc")),
+    );
     const items: MenuItem[] = menuItemsSnapshot.docs.map((doc) => ({
       id: doc.id,
       name: doc.data().name,
@@ -83,20 +68,13 @@ export async function getMenuData(): Promise<{
       order: doc.data().order || 0,
     }));
 
-    return {
-      categories,
-      items,
-      menuNote: "",
-    };
+    return { categories, items, menuNote: "" };
   } catch (error) {
     console.error("Error fetching menu data:", error);
     throw new Error("Failed to fetch menu data");
   }
 }
 
-/**
- * Update a category name and all associated menu items
- */
 export async function updateCategoryName(
   oldName: string,
   newName: string,
@@ -105,32 +83,20 @@ export async function updateCategoryName(
     const batch = writeBatch(db);
 
     // 1. Update the category document
-    const categoriesRef = collection(db, "categories");
-    const categoryQuery = query(categoriesRef, where("name", "==", oldName));
-    const categorySnapshot = await getDocs(categoryQuery);
-
-    if (categorySnapshot.empty) {
+    const categorySnapshot = await getDocs(
+      query(collection(db, "categories"), where("name", "==", oldName)),
+    );
+    if (categorySnapshot.empty)
       throw new Error(`Category "${oldName}" not found`);
-    }
-
-    categorySnapshot.forEach((docSnapshot) => {
-      batch.update(docSnapshot.ref, {
-        name: newName,
-      });
-    });
+    categorySnapshot.forEach((d) => batch.update(d.ref, { name: newName }));
 
     // 2. Update all menu items with this category
-    const menuItemsRef = collection(db, "menuItems");
-    const itemsQuery = query(menuItemsRef, where("category", "==", oldName));
-    const itemsSnapshot = await getDocs(itemsQuery);
+    const itemsSnapshot = await getDocs(
+      query(collection(db, "menuItems"), where("category", "==", oldName)),
+    );
+    itemsSnapshot.forEach((d) => batch.update(d.ref, { category: newName }));
 
-    itemsSnapshot.forEach((docSnapshot) => {
-      batch.update(docSnapshot.ref, {
-        category: newName,
-      });
-    });
-
-    // 3. Commit all updates in a single batch
+    // 3. Commit
     await batch.commit();
   } catch (error) {
     console.error("Error updating category name:", error);
@@ -138,42 +104,25 @@ export async function updateCategoryName(
   }
 }
 
-/**
- * Delete a category and all associated menu items
- */
 export async function deleteCategory(categoryName: string): Promise<void> {
   try {
     const batch = writeBatch(db);
 
     // 1. Find and delete the category document
-    const categoriesRef = collection(db, "categories");
-    const categoryQuery = query(
-      categoriesRef,
-      where("name", "==", categoryName),
+    const categorySnapshot = await getDocs(
+      query(collection(db, "categories"), where("name", "==", categoryName)),
     );
-    const categorySnapshot = await getDocs(categoryQuery);
-
-    if (categorySnapshot.empty) {
+    if (categorySnapshot.empty)
       throw new Error(`Category "${categoryName}" not found`);
-    }
-
-    categorySnapshot.forEach((docSnapshot) => {
-      batch.delete(docSnapshot.ref);
-    });
+    categorySnapshot.forEach((d) => batch.delete(d.ref));
 
     // 2. Find and delete all menu items with this category
-    const menuItemsRef = collection(db, "menuItems");
-    const itemsQuery = query(
-      menuItemsRef,
-      where("category", "==", categoryName),
+    const itemsSnapshot = await getDocs(
+      query(collection(db, "menuItems"), where("category", "==", categoryName)),
     );
-    const itemsSnapshot = await getDocs(itemsQuery);
+    itemsSnapshot.forEach((d) => batch.delete(d.ref));
 
-    itemsSnapshot.forEach((docSnapshot) => {
-      batch.delete(docSnapshot.ref);
-    });
-
-    // 3. Commit all deletions in a single batch
+    // 3. Commit
     await batch.commit();
   } catch (error) {
     console.error("Error deleting category:", error);
@@ -181,10 +130,6 @@ export async function deleteCategory(categoryName: string): Promise<void> {
   }
 }
 
-/**
- * Add a new dish to a category
- * FIXED: Removed orderBy to avoid composite index requirement
- */
 export async function addDish(dishData: {
   name: string;
   category: string;
@@ -194,25 +139,18 @@ export async function addDish(dishData: {
   imgPath?: string;
 }): Promise<void> {
   try {
-    // Get all items in this category (without orderBy to avoid index requirement)
     const menuItemsRef = collection(db, "menuItems");
-    const itemsQuery = query(
-      menuItemsRef,
-      where("category", "==", dishData.category),
+    const itemsSnapshot = await getDocs(
+      query(menuItemsRef, where("category", "==", dishData.category)),
     );
-    const itemsSnapshot = await getDocs(itemsQuery);
 
-    // Find max order manually
     let maxOrder = 0;
     itemsSnapshot.forEach((doc) => {
       const order = doc.data().order || 0;
-      if (order > maxOrder) {
-        maxOrder = order;
-      }
+      if (order > maxOrder) maxOrder = order;
     });
 
-    // Create new dish with order = maxOrder + 1
-    const newDish = {
+    await addDoc(menuItemsRef, {
       name: dishData.name,
       category: dishData.category,
       price: dishData.price,
@@ -221,54 +159,38 @@ export async function addDish(dishData: {
       imgPath: dishData.imgPath || "",
       description: "",
       order: maxOrder + 1,
-    };
-
-    await addDoc(menuItemsRef, newDish);
+    });
   } catch (error) {
     console.error("Error adding dish:", error);
     throw new Error("Failed to add dish");
   }
 }
 
-/**
- * Add a new category
- * FIXED: Removed orderBy to avoid index requirement
- */
 export async function addCategory(categoryData: {
   name: string;
   hasTwoSizes: boolean;
 }): Promise<void> {
   try {
-    // Get all categories (without orderBy to avoid potential issues)
     const categoriesRef = collection(db, "categories");
-    const categoriesSnapshot = await getDocs(categoriesRef);
+    const snapshot = await getDocs(categoriesRef);
 
-    // Find max order manually
     let maxOrder = 0;
-    categoriesSnapshot.forEach((doc) => {
+    snapshot.forEach((doc) => {
       const order = doc.data().order || 0;
-      if (order > maxOrder) {
-        maxOrder = order;
-      }
+      if (order > maxOrder) maxOrder = order;
     });
 
-    // Create new category with order = maxOrder + 1
-    const newCategory = {
+    await addDoc(categoriesRef, {
       name: categoryData.name,
       hasTwoSizes: categoryData.hasTwoSizes,
       order: maxOrder + 1,
-    };
-
-    await addDoc(categoriesRef, newCategory);
+    });
   } catch (error) {
     console.error("Error adding category:", error);
     throw new Error("Failed to add category");
   }
 }
 
-/**
- * Update a dish
- */
 export async function updateDish(
   dishId: string,
   dishData: {
@@ -280,9 +202,7 @@ export async function updateDish(
   },
 ): Promise<void> {
   try {
-    const dishDocRef = doc(db, "menuItems", dishId);
-
-    await updateDoc(dishDocRef, {
+    await updateDoc(doc(db, "menuItems", dishId), {
       name: dishData.name,
       price: dishData.price,
       secondPrice: dishData.secondPrice || null,
@@ -295,36 +215,23 @@ export async function updateDish(
   }
 }
 
-/**
- * Delete a dish
- */
 export async function deleteDish(dishId: string): Promise<void> {
   try {
-    const dishDocRef = doc(db, "menuItems", dishId);
-    await deleteDoc(dishDocRef);
+    await deleteDoc(doc(db, "menuItems", dishId));
   } catch (error) {
     console.error("Error deleting dish:", error);
     throw new Error("Failed to delete dish");
   }
 }
 
-/**
- * Reorder dishes within a category
- * Updates the order field for multiple dishes in a single batch operation
- */
 export async function reorderDishes(
   dishUpdates: Array<{ id: string; order: number }>,
 ): Promise<void> {
   try {
     const batch = writeBatch(db);
-
     dishUpdates.forEach(({ id, order }) => {
-      const dishDocRef = doc(db, "menuItems", id);
-      batch.update(dishDocRef, {
-        order: order,
-      });
+      batch.update(doc(db, "menuItems", id), { order });
     });
-
     await batch.commit();
   } catch (error) {
     console.error("Error reordering dishes:", error);
