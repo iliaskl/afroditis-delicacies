@@ -98,12 +98,6 @@ export interface MenuCategory {
   hasTwoSizes: boolean; // True for categories like "Traditional Greek Pies" and "Beef Dishes"
 }
 
-export interface MenuData {
-  categories: MenuCategory[];
-  items: MenuItem[];
-  menuNote: string;
-}
-
 // Types for shopping cart
 export interface CartItemQuantity {
   size: string; // "single", "large", "small", etc.

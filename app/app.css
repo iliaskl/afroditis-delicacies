@@ -5,23 +5,23 @@
   --foreground: #171717;
 
   /* Greek Restaurant Color Palette */
-  --primary-green: #6B7E3F;
+  --primary-green: #6b7e3f;
   /* Olive green matching the image */
-  --secondary-green: #8B9966;
+  --secondary-green: #8b9966;
   /* Lighter olive green */
-  --dark-green: #4A5530;
+  --dark-green: #4a5530;
   /* Darker olive for accents */
-  --light-green: #A8B88A;
+  --light-green: #a8b88a;
   /* Very light olive */
-  --cream: #F5F5DC;
+  --cream: #f5f5dc;
   /* Warm cream background */
-  --warm-white: #FEFEFE;
+  --warm-white: #fefefe;
   /* Slightly warm white */
-  --text-dark: #2D3319;
+  --text-dark: #2d3319;
   /* Dark green text */
-  --text-medium: #5A6B42;
+  --text-medium: #5a6b42;
   /* Medium green text */
-  --accent-gold: #D4AF37;
+  --accent-gold: #d4af37;
   /* Greek gold accent */
 }
 
@@ -110,7 +110,6 @@ h6 {
 
 /* Custom keyframes for animations */
 @keyframes slide {
-
   0%,
   20% {
     transform: translateX(0%);
@@ -149,7 +148,6 @@ h6 {
 }
 
 @keyframes bounceGentle {
-
   0%,
   100% {
     transform: translateY(0);
