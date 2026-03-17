@@ -40,7 +40,6 @@ export async function uploadDishImage(file: File): Promise<string> {
 export async function getMenuData(): Promise<{
   categories: MenuCategory[];
   items: MenuItem[];
-  menuNote: string;
 }> {
   try {
     const categoriesSnapshot = await getDocs(
@@ -68,7 +67,7 @@ export async function getMenuData(): Promise<{
       order: doc.data().order || 0,
     }));
 
-    return { categories, items, menuNote: "" };
+    return { categories, items };
   } catch (error) {
     console.error("Error fetching menu data:", error);
     throw new Error("Failed to fetch menu data");

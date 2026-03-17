@@ -18,6 +18,12 @@ import "../styles/orders.css";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function deliveryDateTime(order: Order): number {
+  return new Date(
+    `${new Date(order.deliveryDate).toDateString()} ${order.deliveryTime}`,
+  ).getTime();
+}
+
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("en-US", {
     weekday: "short",
@@ -474,39 +480,15 @@ export default function Orders() {
 
   const newOrders = orders
     .filter((o) => o.status === "pending")
-    .sort((a, b) => {
-      const dateA = new Date(
-        `${new Date(a.deliveryDate).toDateString()} ${a.deliveryTime}`,
-      );
-      const dateB = new Date(
-        `${new Date(b.deliveryDate).toDateString()} ${b.deliveryTime}`,
-      );
-      return dateA.getTime() - dateB.getTime();
-    });
+    .sort((a, b) => deliveryDateTime(a) - deliveryDateTime(b));
 
   const activeOrders = orders
     .filter((o) => o.status === "active")
-    .sort((a, b) => {
-      const dateA = new Date(
-        `${new Date(a.deliveryDate).toDateString()} ${a.deliveryTime}`,
-      );
-      const dateB = new Date(
-        `${new Date(b.deliveryDate).toDateString()} ${b.deliveryTime}`,
-      );
-      return dateA.getTime() - dateB.getTime();
-    });
+    .sort((a, b) => deliveryDateTime(a) - deliveryDateTime(b));
 
   const inactiveOrders = orders
     .filter((o) => o.status === "declined" || o.status === "delivered")
-    .sort((a, b) => {
-      const dateA = new Date(
-        `${new Date(a.deliveryDate).toDateString()} ${a.deliveryTime}`,
-      );
-      const dateB = new Date(
-        `${new Date(b.deliveryDate).toDateString()} ${b.deliveryTime}`,
-      );
-      return dateB.getTime() - dateA.getTime();
-    });
+    .sort((a, b) => deliveryDateTime(b) - deliveryDateTime(a));
 
   const clampedNewPage = Math.min(
     newPage,

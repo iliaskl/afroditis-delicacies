@@ -27,7 +27,6 @@ export default function Menu() {
 
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [menuNote, setMenuNote] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState("Full Menu");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +100,6 @@ export default function Menu() {
         const data = await getMenuData();
         setCategories(data.categories);
         setMenuItems(data.items);
-        setMenuNote(data.menuNote);
         setError(null);
       } catch (err) {
         console.error("Error loading menu:", err);
@@ -394,8 +392,6 @@ export default function Menu() {
     return items;
   };
 
-  const filteredItems = getFilteredItems();
-
   const groupedItems =
     selectedCategory === "Full Menu"
       ? categories.reduce(
@@ -418,7 +414,7 @@ export default function Menu() {
         )
       : {
           [selectedCategory]: {
-            items: filteredItems,
+            items: getFilteredItems(),
             hasTwoSizes:
               categories.find((cat) => cat.name === selectedCategory)
                 ?.hasTwoSizes || false,
@@ -667,12 +663,6 @@ export default function Menu() {
             ),
           )}
         </div>
-
-        {menuNote && (
-          <div className="menu-note">
-            <p>{menuNote}</p>
-          </div>
-        )}
 
         {categoryBeingEdited && (
           <>
