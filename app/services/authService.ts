@@ -282,7 +282,7 @@ export async function updateUserPassword(newPassword: string): Promise<void> {
     await updatePassword(user, newPassword);
 
     if (user.email) {
-      await emailService.sendPasswordChangeNotification(user.uid, user.email);
+      await emailService.sendPasswordChangeNotification(user.email);
     }
   } catch (error) {
     const authError = error as AuthError;

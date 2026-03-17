@@ -52,14 +52,6 @@ const Header = () => {
     document.body.classList.remove("modal-open");
   };
 
-  const handleOrdersClick = () => {
-    navigate("/orders");
-  };
-
-  const handleLogoClick = () => {
-    navigate("/");
-  };
-
   useEffect(() => {
     return () => {
       document.body.classList.remove("modal-open");
@@ -74,7 +66,7 @@ const Header = () => {
             <img
               src={logo}
               alt="Afroditi's Logo"
-              onClick={handleLogoClick}
+              onClick={() => navigate("/")}
               style={{ cursor: "pointer" }}
             />
           </div>
@@ -116,7 +108,7 @@ const Header = () => {
             {isAdmin ? (
               <button
                 className="orders-button"
-                onClick={handleOrdersClick}
+                onClick={() => navigate("/orders")}
                 aria-label="Orders"
               >
                 <div className="orders-icon-wrapper">
