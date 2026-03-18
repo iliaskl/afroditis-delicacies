@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  linkWithCredential,
   signOut,
   sendPasswordResetEmail,
   updateProfile,
@@ -29,6 +30,7 @@ import {
 import { auth, db } from "../firebase/firebase";
 import type { UserProfile, AuthFormData } from "../types/types";
 import { emailService } from "./emailService";
+import { clearCart } from "./cartService";
 
 function validatePassword(password: string): {
   isValid: boolean;
@@ -122,7 +124,7 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
   }
 }
 
-export async function signInWithGoogle(): Promise<User> {
+export async function signInWithGoogle(password?: string): Promise<User> {
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
@@ -156,6 +158,35 @@ export async function signInWithGoogle(): Promise<User> {
     return user;
   } catch (error) {
     const authError = error as AuthError;
+    if (authError.code === "auth/account-exists-with-different-credential") {
+      if (!password) {
+        const linkingError = new Error(
+          "An account with this email already exists. Please enter your password to link your Google account.",
+        );
+        (linkingError as any).code = "auth/needs-password-to-link";
+        (linkingError as any).email = authError.customData?.email as string;
+        throw linkingError;
+      }
+
+      const email = authError.customData?.email as string;
+      const credential = GoogleAuthProvider.credentialFromError(authError);
+      if (!credential) throw new Error("Failed to get Google credential.");
+
+      const emailResult = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      await linkWithCredential(emailResult.user, credential);
+
+      await updateDoc(doc(db, "users", emailResult.user.uid), {
+        lastLogin: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
+      return emailResult.user;
+    }
+
     console.error("Google sign-in error:", authError);
     if (authError.code === "auth/popup-closed-by-user")
       throw new Error("Sign-in cancelled");
@@ -325,6 +356,7 @@ export async function deleteUserAccount(
       await reauthenticateWithCredential(user, credential);
     }
 
+    await clearCart(uid);
     await deleteDoc(doc(db, "users", uid));
     await deleteUser(user);
   } catch (error: unknown) {

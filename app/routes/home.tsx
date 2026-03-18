@@ -91,7 +91,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans flex flex-col">
       <Header />
-      <main className="w-full flex-grow">
+      <main className="w-full grow">
         <section className="hero-section">
           <div className="container mx-auto px-4 py-8 md:py-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">

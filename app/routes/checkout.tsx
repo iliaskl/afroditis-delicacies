@@ -257,9 +257,7 @@ export default function Checkout() {
         BOTHELL_LNG,
       );
       if (miles > MAX_DELIVERY_MILES) {
-        setAddressError(
-          `Sorry, this address is ${Math.round(miles)} miles from Bothell, WA. We only deliver within ${MAX_DELIVERY_MILES} miles.`,
-        );
+        setAddressError(`Sorry, this address is not within our delivery area.`);
         setAddressDetails(null);
       }
     } catch {
