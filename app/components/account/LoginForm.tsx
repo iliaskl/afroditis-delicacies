@@ -44,6 +44,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [linkingEmail, setLinkingEmail] = useState<string | null>(null);
+  const [linkingPassword, setLinkingPassword] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -109,16 +111,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (password?: string) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      await loginWithGoogle();
+      await loginWithGoogle(password);
+      setLinkingEmail(null);
+      setLinkingPassword("");
       setSuccess("Successfully signed in with Google!");
       setTimeout(onClose, 1500);
     } catch (err: any) {
-      if (err.message !== "Sign-in cancelled") {
+      if (err.code === "auth/needs-password-to-link") {
+        setLinkingEmail(err.email || "your account");
+        setError(err.message);
+      } else if (err.message !== "Sign-in cancelled") {
         setError(err.message || "Failed to sign in with Google");
       }
     } finally {
@@ -144,7 +151,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
     <>
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
-
       <form onSubmit={handleSubmit} className="auth-form">
         {!isLogin && (
           <>
@@ -254,7 +260,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
               : "Create Account"}
         </button>
       </form>
-
       <div className="auth-toggle">
         <p>
           {isLogin ? "Don't have an account? " : "Already have an account? "}
@@ -268,14 +273,34 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
           </button>
         </p>
       </div>
-
       <div className="divider">
         <span>or</span>
       </div>
 
+      {linkingEmail && (
+        <div className="form-group">
+          <label htmlFor="linkingPassword">Password for {linkingEmail}</label>
+          <input
+            type="password"
+            id="linkingPassword"
+            value={linkingPassword}
+            onChange={(e) => setLinkingPassword(e.target.value)}
+            placeholder="Enter your password to link accounts"
+            disabled={loading}
+          />
+          <button
+            type="button"
+            className="submit-button"
+            disabled={loading || !linkingPassword}
+            onClick={() => handleGoogleSignIn(linkingPassword)}
+          >
+            {loading ? "Linking..." : "Link & Sign In"}
+          </button>
+        </div>
+      )}
       <button
         className="google-signin-button"
-        onClick={handleGoogleSignIn}
+        onClick={() => handleGoogleSignIn()}
         disabled={loading}
         type="button"
       >

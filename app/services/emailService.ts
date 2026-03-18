@@ -447,6 +447,60 @@ class EmailService {
     }
   }
 
+  /**
+   * Sent to customer when admin scraps an already-approved order.
+   */
+  async sendOrderScrappedToCustomer(
+    order: Order,
+    adminNotes?: string,
+  ): Promise<void> {
+    try {
+      const noteHtml = adminNotes
+        ? alertBox(
+            "#c75146",
+            "#fdf0ef",
+            `<strong>Note from Afroditi:</strong><br/>${adminNotes}`,
+          )
+        : "";
+
+      const content = `
+        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:#c75146;font-family:Georgia,serif;">Your Order Has Been Cancelled</h2>
+        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we're sorry — your approved order had to be cancelled.</p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"><tbody>
+          ${sectionDivider()}
+        </tbody></table>
+
+        <p style="margin:0 0 12px 0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${BRAND.green};font-family:Georgia,serif;">Order Details</p>
+        ${infoGrid([
+          {
+            label: "Order ID",
+            value: `<span style="font-family:monospace;font-size:14px;background:#f5f5f0;padding:2px 8px;border-radius:4px;">${order.orderCode}</span>`,
+          },
+          { label: "Requested Delivery", value: formatDeliveryDate(order) },
+        ])}
+
+        ${noteHtml}
+
+        ${alertBox(BRAND.green, "#f0f4e8", `We sincerely apologize for the inconvenience. Please feel free to place a new order or <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};">contact us</a> directly and we'll do our best to accommodate you.`)}
+
+        <p style="margin:24px 0 0 0;font-size:15px;color:#666;font-family:Georgia,serif;line-height:1.7;">
+          We're sorry for any disruption this may have caused.<br/>
+          <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
+        </p>
+      `;
+
+      await this.sendEmail({
+        to: order.customerEmail,
+        subject: `Order Cancelled — ${order.orderCode} | Afroditi's Delicacies`,
+        body: emailWrapper(content),
+        type: "order_scrapped_customer",
+      });
+    } catch (error) {
+      console.error("Error sending order scrapped email:", error);
+    }
+  }
+
   // ─── Auth Emails ───────────────────────────────────────────────────────────
 
   async sendPasswordChangeNotification(userEmail: string): Promise<void> {

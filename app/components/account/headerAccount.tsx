@@ -61,6 +61,9 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
 
   // ── Favorites state ──
   const [favoriteItems, setFavoriteItems] = useState<MenuItem[]>([]);
+  const [hasTwoSizesMap, setHasTwoSizesMap] = useState<Record<string, boolean>>(
+    {},
+  );
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -82,9 +85,18 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     setFavoritesLoading(true);
     Promise.all([getUserFavorites(user.uid), getMenuData()])
       .then(([favIds, menuData]) => {
-        setFavoriteItems(
-          menuData.items.filter((item) => favIds.includes(item.id)),
+        const favItems = menuData.items.filter((item) =>
+          favIds.includes(item.id),
         );
+        setFavoriteItems(favItems);
+        const map: Record<string, boolean> = {};
+        favItems.forEach((item) => {
+          const cat = menuData.categories.find((c) => c.name === item.category);
+          map[item.id] =
+            (cat?.hasTwoSizes && !!item.secondPrice && item.secondPrice > 0) ??
+            false;
+        });
+        setHasTwoSizesMap(map);
       })
       .catch(console.error)
       .finally(() => setFavoritesLoading(false));
@@ -277,6 +289,7 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
                 favoriteItems={favoriteItems}
                 favoritesLoading={favoritesLoading}
                 removingId={removingId}
+                hasTwoSizesMap={hasTwoSizesMap}
                 onRemove={handleRemoveFavorite}
               />
             )}
