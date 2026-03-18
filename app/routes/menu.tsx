@@ -18,6 +18,7 @@ import {
 import { useEditMenu } from "../components/editMenu/editMenu";
 import type { MenuItem, MenuCategory } from "../types/types";
 import MenuItemPopup from "../components/menuItemPopup/MenuItemPopup";
+import MenuPageContent from "../components/menu/MenuPageContent";
 import "../styles/menu.css";
 
 export default function Menu() {
@@ -32,47 +33,13 @@ export default function Menu() {
   const [error, setError] = useState<string | null>(null);
   const [draggedItem, setDraggedItem] = useState<MenuItem | null>(null);
   const [dragOverItem, setDragOverItem] = useState<MenuItem | null>(null);
-
-  const {
-    categoryBeingEdited,
-    categoryBeingDeleted,
-    categoryForNewDish,
-    showAddCategory,
-    dishBeingEdited,
-    dishBeingDeleted,
-    newCategoryName,
-    setNewCategoryName,
-    dishName,
-    setDishName,
-    dishPrice,
-    setDishPrice,
-    dishSecondPrice,
-    setDishSecondPrice,
-    dishAvailable,
-    setDishAvailable,
-    dishImage,
-    setDishImage,
-    dishImagePreview,
-    setDishImagePreview,
-    newCategoryNameInput,
-    setNewCategoryNameInput,
-    newCategoryHasTwoSizes,
-    setNewCategoryHasTwoSizes,
-    isSubmitting,
-    setIsSubmitting,
-    editCategory,
-    deleteCategory,
-    addDish,
-    editDish,
-    deleteDishConfirm,
-    openAddCategory,
-    closeAll,
-  } = useEditMenu();
-
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedCategoryHasTwoSizes, setSelectedCategoryHasTwoSizes] =
     useState(false);
   const [userFavorites, setUserFavorites] = useState<string[]>([]);
+
+  const editMenuProps = useEditMenu();
+  const { setIsSubmitting, closeAll, deleteDishConfirm } = editMenuProps;
 
   useEffect(() => {
     if (!user) {
@@ -84,6 +51,29 @@ export default function Menu() {
     });
   }, [user]);
 
+  useEffect(() => {
+    async function fetchMenuData() {
+      try {
+        setLoading(true);
+        const data = await getMenuData();
+        setCategories(data.categories);
+        setMenuItems(data.items);
+        setError(null);
+      } catch {
+        setError("Failed to load menu. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMenuData();
+  }, []);
+
+  const refreshMenu = async () => {
+    const data = await getMenuData();
+    setCategories(data.categories);
+    setMenuItems(data.items);
+  };
+
   const handleClosePopup = () => {
     setSelectedItem(null);
     if (user) {
@@ -93,25 +83,17 @@ export default function Menu() {
     }
   };
 
-  useEffect(() => {
-    async function fetchMenuData() {
-      try {
-        setLoading(true);
-        const data = await getMenuData();
-        setCategories(data.categories);
-        setMenuItems(data.items);
-        setError(null);
-      } catch (err) {
-        console.error("Error loading menu:", err);
-        setError("Failed to load menu. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
+  const handleMenuItemClick = (item: MenuItem, hasTwoSizes: boolean) => {
+    if (isAdmin) {
+      editMenuProps.editDish(item);
+    } else {
+      setSelectedItem(item);
+      setSelectedCategoryHasTwoSizes(hasTwoSizes);
     }
-    fetchMenuData();
-  }, []);
+  };
 
   const handleSaveCategoryName = async () => {
+    const { categoryBeingEdited, newCategoryName } = editMenuProps;
     if (!categoryBeingEdited || !newCategoryName.trim()) {
       alert("Please enter a valid category name");
       return;
@@ -123,16 +105,12 @@ export default function Menu() {
     try {
       setIsSubmitting(true);
       await updateCategoryName(categoryBeingEdited, newCategoryName.trim());
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
-      if (selectedCategory === categoryBeingEdited) {
+      await refreshMenu();
+      if (selectedCategory === categoryBeingEdited)
         setSelectedCategory(newCategoryName.trim());
-      }
       alert("Category updated successfully!");
       closeAll();
-    } catch (err) {
-      console.error("Error updating category:", err);
+    } catch {
       alert("Failed to update category. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -140,20 +118,17 @@ export default function Menu() {
   };
 
   const handleDeleteCategory = async () => {
+    const { categoryBeingDeleted } = editMenuProps;
     if (!categoryBeingDeleted) return;
     try {
       setIsSubmitting(true);
       await deleteCategoryService(categoryBeingDeleted);
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
-      if (selectedCategory === categoryBeingDeleted) {
+      await refreshMenu();
+      if (selectedCategory === categoryBeingDeleted)
         setSelectedCategory("Full Menu");
-      }
       alert("Category and associated dishes deleted successfully!");
       closeAll();
-    } catch (err) {
-      console.error("Error deleting category:", err);
+    } catch {
       alert("Failed to delete category. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -161,6 +136,14 @@ export default function Menu() {
   };
 
   const handleAddDish = async () => {
+    const {
+      categoryForNewDish,
+      dishName,
+      dishPrice,
+      dishSecondPrice,
+      dishAvailable,
+      dishImage,
+    } = editMenuProps;
     if (!categoryForNewDish || !dishName.trim() || !dishPrice.trim()) {
       alert("Please fill in dish name and price");
       return;
@@ -170,7 +153,7 @@ export default function Menu() {
       alert("Please enter a valid price");
       return;
     }
-    let secondPrice = undefined;
+    let secondPrice: number | undefined;
     if (dishSecondPrice.trim()) {
       secondPrice = parseFloat(dishSecondPrice);
       if (isNaN(secondPrice) || secondPrice <= 0) {
@@ -180,32 +163,90 @@ export default function Menu() {
     }
     try {
       setIsSubmitting(true);
-      let imgPath = "";
-      if (dishImage) {
-        imgPath = await uploadDishImage(dishImage);
-      }
+      const imgPath = dishImage ? await uploadDishImage(dishImage) : "";
       await addDishService({
         name: dishName.trim(),
         category: categoryForNewDish,
-        price: price,
-        secondPrice: secondPrice,
+        price,
+        secondPrice,
         available: dishAvailable,
         imgPath,
       });
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
+      await refreshMenu();
       alert("Dish added successfully!");
       closeAll();
-    } catch (err) {
-      console.error("Error adding dish:", err);
+    } catch {
       alert("Failed to add dish. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleEditDish = async () => {
+    const {
+      dishBeingEdited,
+      dishName,
+      dishPrice,
+      dishSecondPrice,
+      dishAvailable,
+      dishImage,
+    } = editMenuProps;
+    if (!dishBeingEdited || !dishName.trim() || !dishPrice.trim()) {
+      alert("Please fill in dish name and price");
+      return;
+    }
+    const price = parseFloat(dishPrice);
+    if (isNaN(price) || price <= 0) {
+      alert("Please enter a valid price");
+      return;
+    }
+    let secondPrice: number | undefined;
+    if (dishSecondPrice.trim()) {
+      secondPrice = parseFloat(dishSecondPrice);
+      if (isNaN(secondPrice) || secondPrice <= 0) {
+        alert("Please enter a valid second price or leave it empty");
+        return;
+      }
+    }
+    try {
+      setIsSubmitting(true);
+      let imgPath = dishBeingEdited.imgPath;
+      if (dishImage) imgPath = await uploadDishImage(dishImage);
+      await updateDishService(dishBeingEdited.id, {
+        name: dishName.trim(),
+        price,
+        secondPrice,
+        available: dishAvailable,
+        imgPath,
+      });
+      await refreshMenu();
+      alert("Dish updated successfully!");
+      closeAll();
+    } catch {
+      alert("Failed to update dish. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteDish = async () => {
+    const { dishBeingDeleted } = editMenuProps;
+    if (!dishBeingDeleted) return;
+    try {
+      setIsSubmitting(true);
+      await deleteDishService(dishBeingDeleted.id);
+      await refreshMenu();
+      alert("Dish deleted successfully!");
+      closeAll();
+    } catch {
+      alert("Failed to delete dish. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleAddCategory = async () => {
+    const { newCategoryNameInput, newCategoryHasTwoSizes } = editMenuProps;
     if (!newCategoryNameInput.trim()) {
       alert("Please enter a category name");
       return;
@@ -216,79 +257,24 @@ export default function Menu() {
         name: newCategoryNameInput.trim(),
         hasTwoSizes: newCategoryHasTwoSizes,
       });
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
+      await refreshMenu();
       alert("Category added successfully!");
       closeAll();
-    } catch (err) {
-      console.error("Error adding category:", err);
+    } catch {
       alert("Failed to add category. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditDish = async () => {
-    if (!dishBeingEdited || !dishName.trim() || !dishPrice.trim()) {
-      alert("Please fill in dish name and price");
-      return;
-    }
-    const price = parseFloat(dishPrice);
-    if (isNaN(price) || price <= 0) {
-      alert("Please enter a valid price");
-      return;
-    }
-    let secondPrice = undefined;
-    if (dishSecondPrice.trim()) {
-      secondPrice = parseFloat(dishSecondPrice);
-      if (isNaN(secondPrice) || secondPrice <= 0) {
-        alert("Please enter a valid second price or leave it empty");
-        return;
-      }
-    }
-    try {
-      setIsSubmitting(true);
-      let imgPath = dishBeingEdited.imgPath || "";
-      if (dishImage) {
-        imgPath = await uploadDishImage(dishImage);
-      }
-      await updateDishService(dishBeingEdited.id, {
-        name: dishName.trim(),
-        price: price,
-        secondPrice: secondPrice,
-        available: dishAvailable,
-        imgPath,
-      });
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
-      alert("Dish updated successfully!");
-      closeAll();
-    } catch (err) {
-      console.error("Error updating dish:", err);
-      alert("Failed to update dish. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteDish = async () => {
-    if (!dishBeingDeleted) return;
-    try {
-      setIsSubmitting(true);
-      await deleteDishService(dishBeingDeleted.id);
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
-      alert("Dish deleted successfully!");
-      closeAll();
-    } catch (err) {
-      console.error("Error deleting dish:", err);
-      alert("Failed to delete dish. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    editMenuProps.setDishImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () =>
+      editMenuProps.setDishImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleDragStart = (e: React.DragEvent, item: MenuItem) => {
@@ -308,9 +294,7 @@ export default function Menu() {
     }
   };
 
-  const handleDragLeave = () => {
-    setDragOverItem(null);
-  };
+  const handleDragLeave = () => setDragOverItem(null);
 
   const handleDrop = async (e: React.DragEvent, dropTarget: MenuItem) => {
     e.preventDefault();
@@ -333,19 +317,14 @@ export default function Menu() {
       const dropIndex = categoryItems.findIndex(
         (item) => item.id === dropTarget.id,
       );
-      const reorderedItems = [...categoryItems];
-      const [removed] = reorderedItems.splice(draggedIndex, 1);
-      reorderedItems.splice(dropIndex, 0, removed);
-      const updates = reorderedItems.map((item, index) => ({
-        id: item.id,
-        order: index + 1,
-      }));
-      await reorderDishesService(updates);
-      const data = await getMenuData();
-      setCategories(data.categories);
-      setMenuItems(data.items);
-    } catch (err) {
-      console.error("Error reordering dishes:", err);
+      const reordered = [...categoryItems];
+      const [removed] = reordered.splice(draggedIndex, 1);
+      reordered.splice(dropIndex, 0, removed);
+      await reorderDishesService(
+        reordered.map((item, index) => ({ id: item.id, order: index + 1 })),
+      );
+      await refreshMenu();
+    } catch {
       alert("Failed to reorder dishes. Please try again.");
     } finally {
       setDraggedItem(null);
@@ -357,69 +336,6 @@ export default function Menu() {
     setDraggedItem(null);
     setDragOverItem(null);
   };
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setDishImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setDishImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleMenuItemClick = (item: MenuItem, hasTwoSizes: boolean) => {
-    if (isAdmin) {
-      editDish(item);
-    } else {
-      setSelectedItem(item);
-      setSelectedCategoryHasTwoSizes(hasTwoSizes);
-    }
-  };
-
-  const allCategories = ["Full Menu", ...categories.map((cat) => cat.name)];
-
-  const getFilteredItems = () => {
-    let items =
-      selectedCategory === "Full Menu"
-        ? menuItems
-        : menuItems.filter((item) => item.category === selectedCategory);
-    if (!isAdmin) {
-      items = items.filter((item) => item.available);
-    }
-    return items;
-  };
-
-  const groupedItems =
-    selectedCategory === "Full Menu"
-      ? categories.reduce(
-          (acc, category) => {
-            const items = menuItems.filter(
-              (item) => item.category === category.name,
-            );
-            const displayItems = isAdmin
-              ? items
-              : items.filter((item) => item.available);
-            if (isAdmin || displayItems.length > 0) {
-              acc[category.name] = {
-                items: displayItems,
-                hasTwoSizes: category.hasTwoSizes,
-              };
-            }
-            return acc;
-          },
-          {} as Record<string, { items: MenuItem[]; hasTwoSizes: boolean }>,
-        )
-      : {
-          [selectedCategory]: {
-            items: getFilteredItems(),
-            hasTwoSizes:
-              categories.find((cat) => cat.name === selectedCategory)
-                ?.hasTwoSizes || false,
-          },
-        };
 
   if (loading) {
     return (
@@ -454,615 +370,38 @@ export default function Menu() {
     <div className="min-h-screen bg-white font-sans flex flex-col">
       <Header />
       <main className="menu-container">
-        <div className="menu-header">
-          <h1>Our Menu</h1>
-          <p>
-            Authentic Greek cuisine made with traditional recipes and the finest
-            ingredients
-          </p>
-        </div>
-
-        <div className="menu-filters">
-          {allCategories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`filter-btn ${selectedCategory === category ? "active" : ""}`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {isAdmin && (
-          <div className="add-category-section">
-            <button onClick={openAddCategory} className="add-category-btn">
-              <span className="plus-icon">+</span>
-              Add Category
-            </button>
-          </div>
-        )}
-
-        <div className="menu-content">
-          {Object.entries(groupedItems).map(
-            ([categoryName, { items, hasTwoSizes }]) => (
-              <div key={categoryName} className="menu-category">
-                <div className="category-header-row">
-                  <h2 className="category-title">{categoryName}</h2>
-
-                  {isAdmin && (
-                    <div className="category-admin-controls">
-                      <button
-                        onClick={() => editCategory(categoryName)}
-                        className="admin-icon-btn edit-btn"
-                        title="Edit category"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(categoryName)}
-                        className="admin-icon-btn delete-btn"
-                        title="Delete category"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          <line x1="10" y1="11" x2="10" y2="17" />
-                          <line x1="14" y1="11" x2="14" y2="17" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => addDish(categoryName)}
-                        className="admin-icon-btn add-btn"
-                        title="Add dish"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-
-                  {(hasTwoSizes ||
-                    items.some((i) => i.secondPrice && i.secondPrice > 0)) && (
-                    <div className="size-headers">
-                      <span className="size-header">Small / Large</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="menu-items">
-                  {items.length > 0
-                    ? items.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`menu-item ${!item.available ? "unavailable" : ""} ${isAdmin || (!isAdmin && item.available) ? "clickable" : ""} ${isAdmin ? "admin-view" : ""} ${
-                            draggedItem?.id === item.id ? "dragging" : ""
-                          } ${dragOverItem?.id === item.id ? "drag-over" : ""}`}
-                          draggable={!!isAdmin}
-                          onDragStart={(e) =>
-                            isAdmin ? handleDragStart(e, item) : undefined
-                          }
-                          onDragOver={(e) =>
-                            isAdmin ? handleDragOver(e, item) : undefined
-                          }
-                          onDragLeave={isAdmin ? handleDragLeave : undefined}
-                          onDrop={(e) =>
-                            isAdmin ? handleDrop(e, item) : undefined
-                          }
-                          onDragEnd={isAdmin ? handleDragEnd : undefined}
-                          onClick={() =>
-                            !draggedItem && (isAdmin || item.available)
-                              ? handleMenuItemClick(item, hasTwoSizes)
-                              : undefined
-                          }
-                          style={{
-                            cursor: isAdmin
-                              ? draggedItem
-                                ? "grabbing"
-                                : "pointer"
-                              : item.available
-                                ? "pointer"
-                                : "default",
-                          }}
-                        >
-                          {isAdmin && (
-                            <div
-                              className="drag-handle"
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              <svg viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="9" cy="5" r="1.5" />
-                                <circle cx="9" cy="12" r="1.5" />
-                                <circle cx="9" cy="19" r="1.5" />
-                                <circle cx="15" cy="5" r="1.5" />
-                                <circle cx="15" cy="12" r="1.5" />
-                                <circle cx="15" cy="19" r="1.5" />
-                              </svg>
-                            </div>
-                          )}
-                          <div className="item-content">
-                            <h3 className="item-name">
-                              <span className="dish-name">
-                                {item.name}
-                                {user && userFavorites.includes(item.id) && (
-                                  <svg
-                                    viewBox="0 0 24 24"
-                                    width="14"
-                                    height="14"
-                                    style={{
-                                      marginLeft: "6px",
-                                      color: "#c0392b",
-                                      display: "inline",
-                                      verticalAlign: "middle",
-                                    }}
-                                    aria-label="Favorited"
-                                  >
-                                    <path
-                                      fill="currentColor"
-                                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                    />
-                                  </svg>
-                                )}
-                              </span>
-                              {!item.available && (
-                                <span className="unavailable-badge">
-                                  (Unavailable)
-                                </span>
-                              )}
-                            </h3>
-                          </div>
-                          <div className="item-pricing">
-                            {(hasTwoSizes ||
-                              items.some(
-                                (i) => i.secondPrice && i.secondPrice > 0,
-                              )) &&
-                            item.secondPrice &&
-                            item.secondPrice > 0 ? (
-                              <span className="price">
-                                ${item.secondPrice.toFixed(2)} / $
-                                {item.price.toFixed(2)}
-                              </span>
-                            ) : (
-                              <span className="price single-price">
-                                ${item.price.toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    : isAdmin && (
-                        <div className="empty-category">
-                          <p>
-                            No dishes in this category yet. Click the + button
-                            above to add one.
-                          </p>
-                        </div>
-                      )}
-                </div>
-              </div>
-            ),
-          )}
-        </div>
-
-        {categoryBeingEdited && (
-          <>
-            <div className="edit-overlay" onClick={closeAll}></div>
-            <div className="edit-menu-popup">
-              <h2>Edit Category</h2>
-              <p className="popup-subtitle">Update the category name</p>
-              <div className="form-group">
-                <label>Current name:</label>
-                <div className="current-value">{categoryBeingEdited}</div>
-              </div>
-              <div className="form-group">
-                <label>New name:</label>
-                <input
-                  type="text"
-                  placeholder="Enter new category name"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  disabled={isSubmitting}
-                  autoFocus
-                />
-              </div>
-              <div className="popup-buttons">
-                <button
-                  className="save-btn"
-                  onClick={handleSaveCategoryName}
-                  disabled={isSubmitting || !newCategoryName.trim()}
-                >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={closeAll}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {categoryBeingDeleted && (
-          <>
-            <div className="edit-overlay" onClick={closeAll}></div>
-            <div className="edit-menu-popup">
-              <h2>Delete Category</h2>
-              <p className="popup-subtitle warning">
-                This action cannot be undone
-              </p>
-              <p className="confirmation-text">
-                Are you sure you want to delete{" "}
-                <strong>{categoryBeingDeleted}</strong>?
-                <br />
-                <span className="warning-subtext">
-                  All dishes in this category will also be deleted.
-                </span>
-              </p>
-              <div className="popup-buttons">
-                <button
-                  className="delete-button"
-                  onClick={handleDeleteCategory}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Deleting..." : "Yes, Delete"}
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={closeAll}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {categoryForNewDish && (
-          <>
-            <div className="edit-overlay" onClick={closeAll}></div>
-            <div className="edit-menu-popup add-dish-popup">
-              <h2>Add New Dish</h2>
-              <p className="popup-subtitle">
-                Category: <strong>{categoryForNewDish}</strong>
-              </p>
-              <div className="form-group">
-                <label>Dish name: *</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Moussaka"
-                  value={dishName}
-                  onChange={(e) => setDishName(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Small Price (Default): *</label>
-                  <input
-                    type="number"
-                    placeholder="15"
-                    min="0"
-                    step="0.01"
-                    value={dishPrice}
-                    onChange={(e) => setDishPrice(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Large Price: (optional)</label>
-                  <input
-                    type="number"
-                    placeholder="10"
-                    min="0"
-                    step="0.01"
-                    value={dishSecondPrice}
-                    onChange={(e) => setDishSecondPrice(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={dishAvailable}
-                    onChange={(e) => setDishAvailable(e.target.checked)}
-                    disabled={isSubmitting}
-                  />
-                  <span>Dish is available</span>
-                </label>
-              </div>
-              <div className="form-group">
-                <label>Dish Image: (placeholder)</label>
-                <div className="image-upload-section">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    disabled={isSubmitting}
-                    className="file-input"
-                    id="dish-image-upload"
-                  />
-                  <label
-                    htmlFor="dish-image-upload"
-                    className="file-input-label"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    Choose Image
-                  </label>
-                  {dishImagePreview && (
-                    <div className="image-preview">
-                      <img src={dishImagePreview} alt="Preview" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="popup-buttons">
-                <button
-                  className="save-btn"
-                  onClick={handleAddDish}
-                  disabled={
-                    isSubmitting || !dishName.trim() || !dishPrice.trim()
-                  }
-                >
-                  {isSubmitting ? "Adding..." : "Add Dish"}
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={closeAll}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {showAddCategory && (
-          <>
-            <div className="edit-overlay" onClick={closeAll}></div>
-            <div className="edit-menu-popup">
-              <h2>Add New Category</h2>
-              <p className="popup-subtitle">Create a new menu category</p>
-              <div className="form-group">
-                <label>Category name: *</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Appetizers"
-                  value={newCategoryNameInput}
-                  onChange={(e) => setNewCategoryNameInput(e.target.value)}
-                  disabled={isSubmitting}
-                  autoFocus
-                />
-              </div>
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={newCategoryHasTwoSizes}
-                    onChange={(e) =>
-                      setNewCategoryHasTwoSizes(e.target.checked)
-                    }
-                    disabled={isSubmitting}
-                  />
-                  <span>This category has two sizes (Large/Small)</span>
-                </label>
-              </div>
-              <div className="popup-buttons">
-                <button
-                  className="save-btn"
-                  onClick={handleAddCategory}
-                  disabled={isSubmitting || !newCategoryNameInput.trim()}
-                >
-                  {isSubmitting ? "Adding..." : "Add Category"}
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={closeAll}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {dishBeingEdited && (
-          <>
-            <div className="edit-overlay" onClick={closeAll}></div>
-            <div className="edit-menu-popup add-dish-popup">
-              <h2>Edit Dish</h2>
-              <p className="popup-subtitle">
-                Category: <strong>{dishBeingEdited.category}</strong>
-              </p>
-              <div className="form-group">
-                <label>Dish name: *</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Moussaka"
-                  value={dishName}
-                  onChange={(e) => setDishName(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Small Price (Default): *</label>
-                  <input
-                    type="number"
-                    placeholder="15"
-                    min="0"
-                    step="0.01"
-                    value={dishPrice}
-                    onChange={(e) => setDishPrice(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Large Price: (optional)</label>
-                  <input
-                    type="number"
-                    placeholder="10"
-                    min="0"
-                    step="0.01"
-                    value={dishSecondPrice}
-                    onChange={(e) => setDishSecondPrice(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={dishAvailable}
-                    onChange={(e) => setDishAvailable(e.target.checked)}
-                    disabled={isSubmitting}
-                  />
-                  <span>Dish is available</span>
-                </label>
-              </div>
-              <div className="form-group">
-                <label>Dish Image: (placeholder)</label>
-                <div className="image-upload-section">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    disabled={isSubmitting}
-                    className="file-input"
-                    id="edit-dish-image-upload"
-                  />
-                  <label
-                    htmlFor="edit-dish-image-upload"
-                    className="file-input-label"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    Choose Image
-                  </label>
-                  {dishImagePreview && (
-                    <div className="image-preview">
-                      <img src={dishImagePreview} alt="Preview" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="popup-buttons">
-                <button
-                  className="save-btn"
-                  onClick={handleEditDish}
-                  disabled={
-                    isSubmitting || !dishName.trim() || !dishPrice.trim()
-                  }
-                >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-                <button
-                  className="delete-button"
-                  onClick={() => {
-                    closeAll();
-                    deleteDishConfirm(dishBeingEdited);
-                  }}
-                  disabled={isSubmitting}
-                >
-                  Delete Dish
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={closeAll}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {dishBeingDeleted && (
-          <>
-            <div className="edit-overlay" onClick={closeAll}></div>
-            <div className="edit-menu-popup">
-              <h2>Delete Dish</h2>
-              <p className="popup-subtitle warning">
-                This action cannot be undone
-              </p>
-              <p className="confirmation-text">
-                Are you sure you want to delete{" "}
-                <strong>{dishBeingDeleted.name}</strong>?
-              </p>
-              <div className="popup-buttons">
-                <button
-                  className="delete-button"
-                  onClick={handleDeleteDish}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Deleting..." : "Yes, Delete"}
-                </button>
-                <button
-                  className="cancel-btn"
-                  onClick={closeAll}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {selectedItem && (
-          <MenuItemPopup
-            item={selectedItem}
-            hasTwoSizes={selectedCategoryHasTwoSizes}
-            onClose={handleClosePopup}
-          />
-        )}
+        <MenuPageContent
+          categories={categories}
+          menuItems={menuItems}
+          selectedCategory={selectedCategory}
+          isAdmin={!!isAdmin}
+          draggedItem={draggedItem}
+          dragOverItem={dragOverItem}
+          userFavorites={userFavorites}
+          editMenuProps={editMenuProps}
+          onSelectCategory={setSelectedCategory}
+          onItemClick={handleMenuItemClick}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onDragEnd={handleDragEnd}
+          handleSaveCategoryName={handleSaveCategoryName}
+          handleDeleteCategory={handleDeleteCategory}
+          handleAddDish={handleAddDish}
+          handleEditDish={handleEditDish}
+          handleDeleteDish={handleDeleteDish}
+          handleAddCategory={handleAddCategory}
+          handleImageSelect={handleImageSelect}
+        />
       </main>
+      {selectedItem && (
+        <MenuItemPopup
+          item={selectedItem}
+          hasTwoSizes={selectedCategoryHasTwoSizes}
+          onClose={handleClosePopup}
+        />
+      )}
       <Footer />
     </div>
   );
