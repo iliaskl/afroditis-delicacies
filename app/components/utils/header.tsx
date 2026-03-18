@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import "./header.css";
 import logo from "../../../src/img/logos/logo_t.png";
-import HeaderAccount from "./headerAccount";
+import HeaderAccount from "../account/headerAccount";
 import CartPopup from "../cartPopup/CartPopup";
 import { useCart } from "../../context/cartContext/cartContext";
 import { useAuth } from "../../context/authContext/authContext";
