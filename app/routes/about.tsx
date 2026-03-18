@@ -1,4 +1,3 @@
-import React from "react";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/about.css";
@@ -8,7 +7,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white font-sans flex flex-col">
       <Header />
-      <main className="w-full flex-grow">
+      <main className="w-full grow">
         <div className="about-container">
           <div className="about-content">
             {/* Left side - Text content */}

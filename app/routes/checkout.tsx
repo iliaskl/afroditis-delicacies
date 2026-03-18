@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
-import AddressAutocomplete from "../components/addressAutocomplete/AddressAutocomplete";
 import { useAuth } from "../context/authContext/authContext";
 import { useUserProfile } from "../context/userContext/userProfile";
 import { useCart } from "../context/cartContext/cartContext";
@@ -12,51 +11,22 @@ import {
   getOrderById,
   getBookedTimesForDate,
   subscribeToBlockedDays,
-  ALL_TIME_SLOTS,
-  timeToMinutes,
   dateKey,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
 import type { AddressDetails } from "../services/addressService";
 import type { OrderItem, PaymentMethod } from "../types/types";
+import AddressSection from "../components/checkout/AddressSection";
+import DeliveryScheduler, {
+  getEarliestDeliveryDate,
+} from "../components/checkout/DeliveryScheduler";
 import "../styles/checkout.css";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const BOTHELL_LAT = 47.7623;
 const BOTHELL_LNG = -122.2054;
-const MAX_DELIVERY_MILES = 50;
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-// Lead-time notice shown below the "Delivery Date & Time" section header
-const LEAD_TIME_NOTE: Record<string, string> = {
-  small: "Minimum 24 hours notice required.",
-  medium: "Minimum 72 hours notice required.",
-  large: "Minimum 5 days notice required.",
-};
-
-function getLeadTimeNote(totalItems: number): string {
-  if (totalItems >= 7) return LEAD_TIME_NOTE.large;
-  if (totalItems >= 4) return LEAD_TIME_NOTE.medium;
-  return LEAD_TIME_NOTE.small;
-}
-
-// ── Geo helpers ───────────────────────────────────────────────────────────────
+const MAX_DELIVERY_MILES = 25;
 
 /** Haversine distance in miles between two lat/lng points. */
 function distanceMiles(
@@ -98,73 +68,6 @@ async function geocodeAddress(
   }
 }
 
-// ── Lead-time / calendar helpers ──────────────────────────────────────────────
-
-function getLeadTimeHours(totalItems: number): number {
-  if (totalItems >= 7) return 120;
-  if (totalItems >= 4) return 72;
-  return 24;
-}
-
-/**
- * Returns the earliest calendar DATE a customer may select.
- *
- * Computes (now + lead-time hours), then checks whether any delivery slot
- * (10 AM – 10 PM) still falls after the cutoff on that day. If not, advances
- * one day.
- *
- * Example: order placed at 11 PM with a 24-hour lead time → cutoff is
- * 11 PM the next day. No slot exists after 11 PM (last slot is 10 PM),
- * so the earliest selectable date becomes the day after next.
- */
-function getEarliestDeliveryDate(totalItems: number): Date {
-  const cutoff = new Date(Date.now() + getLeadTimeHours(totalItems) * 3600_000);
-  const cutoffMins = cutoff.getHours() * 60 + cutoff.getMinutes();
-
-  const candidate = new Date(cutoff);
-  candidate.setHours(0, 0, 0, 0);
-
-  const LAST_SLOT_MINUTES = 22 * 60; // 10:00 PM
-  if (cutoffMins >= LAST_SLOT_MINUTES)
-    candidate.setDate(candidate.getDate() + 1);
-
-  return candidate;
-}
-
-/**
- * For the earliest selectable date only, returns the minimum minutes-since-
- * midnight a slot must reach to be selectable. Returns 0 for any later date.
- */
-function getEarliestSlotMinutes(
-  totalItems: number,
-  selectedDate: Date,
-): number {
-  const cutoff = new Date(Date.now() + getLeadTimeHours(totalItems) * 3600_000);
-
-  const cutoffDay = new Date(cutoff);
-  cutoffDay.setHours(0, 0, 0, 0);
-
-  const selDay = new Date(selectedDate);
-  selDay.setHours(0, 0, 0, 0);
-
-  if (selDay.getTime() === cutoffDay.getTime()) {
-    return cutoff.getHours() * 60 + cutoff.getMinutes();
-  }
-  return 0;
-}
-
-/** Build a calendar grid for a given month (null = empty cell). */
-function buildCalendarDays(year: number, month: number): (Date | null)[] {
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const days: (Date | null)[] = Array(firstDay).fill(null);
-  for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
-  return days;
-}
-
-// ── Shared UI ─────────────────────────────────────────────────────────────────
-
-/** Green checkmark icon reused in address confirmation rows. */
 function CheckIcon() {
   return (
     <svg
@@ -180,8 +83,6 @@ function CheckIcon() {
     </svg>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -206,6 +107,9 @@ export default function Checkout() {
   const [addressInputValue, setAddressInputValue] = useState("");
   const [addressError, setAddressError] = useState<string | null>(null);
   const [addressValidating, setAddressValidating] = useState(false);
+  const [addressMode, setAddressMode] = useState<"profile" | "custom">(
+    "profile",
+  );
 
   // ── Calendar state ──
   const today = new Date();
@@ -220,12 +124,6 @@ export default function Checkout() {
   // ── Payment ──
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
     null,
-  );
-
-  // ── Address mode ──
-  const hasProfileAddress = !!profile?.address?.street;
-  const [addressMode, setAddressMode] = useState<"profile" | "custom">(
-    "profile",
   );
 
   // ── Submission ──
@@ -265,7 +163,7 @@ export default function Checkout() {
   );
   const earliestDate = getEarliestDeliveryDate(totalItems);
 
-  // Clear selected date if cart changes and it's no longer valid
+  // Clear selected date if it's no longer valid after cart changes
   useEffect(() => {
     if (!selectedDate) return;
     const d = new Date(selectedDate);
@@ -276,8 +174,7 @@ export default function Checkout() {
     }
   }, [totalItems]);
 
-  // Load booked times when date changes; poll every 15 s so concurrent
-  // orders from other customers are reflected without a page reload
+  // Load booked times when date changes; poll every 15s
   useEffect(() => {
     if (!selectedDate) {
       setBookedTimes([]);
@@ -373,15 +270,14 @@ export default function Checkout() {
     }
   };
 
-  // ── Calendar helpers ──
-  const calendarDays = buildCalendarDays(calendarYear, calendarMonth);
-
+  // ── Calendar handlers ──
   const prevMonth = () => {
     if (calendarMonth === 0) {
       setCalendarMonth(11);
       setCalendarYear((y) => y - 1);
     } else setCalendarMonth((m) => m - 1);
   };
+
   const nextMonth = () => {
     if (calendarMonth === 11) {
       setCalendarMonth(0);
@@ -389,20 +285,12 @@ export default function Checkout() {
     } else setCalendarMonth((m) => m + 1);
   };
 
-  const isDayAvailable = (day: Date): boolean => {
+  const handleDayClick = (day: Date) => {
     const d = new Date(day);
     d.setHours(0, 0, 0, 0);
-    return d >= earliestDate && !blockedDays.includes(dateKey(d));
-  };
-
-  const isDaySelected = (day: Date): boolean =>
-    !!selectedDate &&
-    day.getFullYear() === selectedDate.getFullYear() &&
-    day.getMonth() === selectedDate.getMonth() &&
-    day.getDate() === selectedDate.getDate();
-
-  const handleDayClick = (day: Date) => {
-    if (!isDayAvailable(day)) return;
+    const key = dateKey(d);
+    const available = d >= earliestDate && !blockedDays.includes(key);
+    if (!available) return;
     setSelectedDate(day);
     setSelectedTime(null);
   };
@@ -605,154 +493,34 @@ export default function Checkout() {
               </section>
 
               {/* Delivery Address */}
-              <section className="checkout-section">
-                <h2 className="checkout-section-title">Delivery Address</h2>
-                <p className="checkout-section-note">
-                  Must be within 50 miles of Bothell, WA.
-                </p>
-
-                {hasProfileAddress && (
-                  <div className="address-mode-toggle">
-                    <label className="address-radio-label">
-                      <input
-                        type="radio"
-                        name="addressMode"
-                        value="profile"
-                        checked={addressMode === "profile"}
-                        onChange={() => handleAddressModeChange("profile")}
-                      />
-                      <span>Use my saved address</span>
-                    </label>
-                    <label className="address-radio-label">
-                      <input
-                        type="radio"
-                        name="addressMode"
-                        value="custom"
-                        checked={addressMode === "custom"}
-                        onChange={() => handleAddressModeChange("custom")}
-                      />
-                      <span>Deliver to a different address</span>
-                    </label>
-                  </div>
-                )}
-
-                {addressMode === "profile" && hasProfileAddress ? (
-                  <div className="address-confirmed">
-                    <CheckIcon />
-                    {addressDetails?.formattedAddress}
-                  </div>
-                ) : (
-                  <>
-                    <AddressAutocomplete
-                      onAddressSelect={handleAddressSelect}
-                      initialValue={addressInputValue}
-                      placeholder="Start typing your delivery address…"
-                      mapboxToken={MAPBOX_TOKEN}
-                    />
-                    {addressValidating && (
-                      <p className="address-validating">Validating address…</p>
-                    )}
-                    {addressDetails && !addressError && (
-                      <div className="address-confirmed">
-                        <CheckIcon />
-                        {addressDetails.formattedAddress}
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {addressError && (
-                  <p className="checkout-field-error">{addressError}</p>
-                )}
-              </section>
+              <AddressSection
+                profile={profile}
+                addressMode={addressMode}
+                addressDetails={addressDetails}
+                addressInputValue={addressInputValue}
+                addressError={addressError}
+                addressValidating={addressValidating}
+                mapboxToken={MAPBOX_TOKEN}
+                onModeChange={handleAddressModeChange}
+                onAddressSelect={handleAddressSelect}
+              />
 
               {/* Delivery Date & Time */}
-              <section className="checkout-section">
-                <h2 className="checkout-section-title">Delivery Date & Time</h2>
-                <p className="checkout-section-note">
-                  {getLeadTimeNote(totalItems)}
-                </p>
-
-                <div className="calendar-wrapper">
-                  <div className="calendar-nav">
-                    <button onClick={prevMonth} className="calendar-nav-btn">
-                      ‹
-                    </button>
-                    <span className="calendar-month-label">
-                      {MONTH_NAMES[calendarMonth]} {calendarYear}
-                    </span>
-                    <button onClick={nextMonth} className="calendar-nav-btn">
-                      ›
-                    </button>
-                  </div>
-
-                  <div className="calendar-grid">
-                    {DAY_NAMES.map((d) => (
-                      <div key={d} className="calendar-day-name">
-                        {d}
-                      </div>
-                    ))}
-                    {calendarDays.map((day, i) => {
-                      if (!day) return <div key={`empty-${i}`} />;
-                      const available = isDayAvailable(day);
-                      const selected = isDaySelected(day);
-                      return (
-                        <button
-                          key={day.toISOString()}
-                          className={`calendar-day ${available ? "available" : "unavailable"} ${selected ? "selected" : ""}`}
-                          onClick={() => handleDayClick(day)}
-                          disabled={!available}
-                        >
-                          {day.getDate()}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {selectedDate && (
-                  <div className="time-slots-wrapper">
-                    <p className="time-slots-label">
-                      Select delivery time on{" "}
-                      <strong>
-                        {selectedDate.toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </strong>
-                      :
-                    </p>
-                    {timesLoading ? (
-                      <p className="times-loading">Loading available times…</p>
-                    ) : (
-                      <div className="time-slots-grid">
-                        {ALL_TIME_SLOTS.map((slot) => {
-                          const slotMins = timeToMinutes(slot);
-                          const minMins = getEarliestSlotMinutes(
-                            totalItems,
-                            selectedDate,
-                          );
-                          const blocked =
-                            (minMins > 0 && slotMins <= minMins) ||
-                            bookedTimes.includes(slot);
-                          const isSelected = !blocked && selectedTime === slot;
-                          return (
-                            <button
-                              key={slot}
-                              className={`time-slot ${blocked ? "blocked" : "open"} ${isSelected ? "selected" : ""}`}
-                              onClick={() => !blocked && setSelectedTime(slot)}
-                              disabled={blocked}
-                            >
-                              {slot}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
+              <DeliveryScheduler
+                totalItems={totalItems}
+                earliestDate={earliestDate}
+                blockedDays={blockedDays}
+                bookedTimes={bookedTimes}
+                timesLoading={timesLoading}
+                calendarYear={calendarYear}
+                calendarMonth={calendarMonth}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onPrevMonth={prevMonth}
+                onNextMonth={nextMonth}
+                onDayClick={handleDayClick}
+                onTimeSelect={setSelectedTime}
+              />
 
               {/* Payment */}
               <section className="checkout-section">
@@ -875,7 +643,6 @@ export default function Checkout() {
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

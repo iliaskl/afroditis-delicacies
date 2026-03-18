@@ -449,10 +449,7 @@ class EmailService {
 
   // ─── Auth Emails ───────────────────────────────────────────────────────────
 
-  async sendPasswordChangeNotification(
-    _userId: string,
-    userEmail: string,
-  ): Promise<void> {
+  async sendPasswordChangeNotification(userEmail: string): Promise<void> {
     try {
       const timestamp = new Date().toLocaleString("en-US", {
         dateStyle: "full",

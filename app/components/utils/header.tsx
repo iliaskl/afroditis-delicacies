@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import "./header.css";
 import logo from "../../../src/img/logos/logo_t.png";
-import HeaderAccount from "./headerAccount";
+import HeaderAccount from "../account/headerAccount";
 import CartPopup from "../cartPopup/CartPopup";
 import { useCart } from "../../context/cartContext/cartContext";
 import { useAuth } from "../../context/authContext/authContext";
@@ -52,14 +52,6 @@ const Header = () => {
     document.body.classList.remove("modal-open");
   };
 
-  const handleOrdersClick = () => {
-    navigate("/orders");
-  };
-
-  const handleLogoClick = () => {
-    navigate("/");
-  };
-
   useEffect(() => {
     return () => {
       document.body.classList.remove("modal-open");
@@ -74,7 +66,7 @@ const Header = () => {
             <img
               src={logo}
               alt="Afroditi's Logo"
-              onClick={handleLogoClick}
+              onClick={() => navigate("/")}
               style={{ cursor: "pointer" }}
             />
           </div>
@@ -116,7 +108,7 @@ const Header = () => {
             {isAdmin ? (
               <button
                 className="orders-button"
-                onClick={handleOrdersClick}
+                onClick={() => navigate("/orders")}
                 aria-label="Orders"
               >
                 <div className="orders-icon-wrapper">

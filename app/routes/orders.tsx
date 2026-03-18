@@ -10,437 +10,24 @@ import {
   approveOrder,
   declineOrder,
   markOrderDelivered,
-  markOrderViewedByAdmin,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
 import type { Order } from "../types/types";
+import OrderSection from "../components/orders/OrderSection";
+import ConfirmDialog from "../components/orders/ConfirmDialog";
 import "../styles/orders.css";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 5;
 
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+function deliveryDateTime(order: Order): number {
+  return new Date(
+    `${new Date(order.deliveryDate).toDateString()} ${order.deliveryTime}`,
+  ).getTime();
 }
-
-function formatDateTime(date: Date, time: string): string {
-  return `${formatDate(date)} at ${time}`;
-}
-
-function formatOrderDate(date: Date): string {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-/**
- * Returns true if the delivery date + time has already passed.
- * Used to flag overdue orders for admin attention.
- */
-function isOrderExpired(order: Order): boolean {
-  const [timePart, ampm] = order.deliveryTime.split(" ");
-  const [h, m] = timePart.split(":").map(Number);
-  let hours = h;
-  if (ampm === "PM" && h !== 12) hours += 12;
-  if (ampm === "AM" && h === 12) hours = 0;
-
-  const deliveryDateTime = new Date(order.deliveryDate);
-  deliveryDateTime.setHours(hours, m, 0, 0);
-  return deliveryDateTime < new Date();
-}
-
-function paymentLabel(method: string): string {
-  if (method === "pay_on_delivery") return "Pay on Delivery";
-  return method.charAt(0).toUpperCase() + method.slice(1);
-}
-
-// ─── Confirm Dialog ───────────────────────────────────────────────────────────
-
-interface ConfirmDialogProps {
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  confirmLabel?: string;
-  confirmDanger?: boolean;
-  extraContent?: React.ReactNode;
-}
-
-function ConfirmDialog({
-  message,
-  onConfirm,
-  onCancel,
-  confirmLabel = "Confirm",
-  confirmDanger = false,
-  extraContent,
-}: ConfirmDialogProps) {
-  return (
-    <div className="confirm-overlay" onClick={onCancel}>
-      <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
-        <p className="confirm-message">{message}</p>
-        {extraContent}
-        <div className="confirm-actions">
-          <button className="confirm-cancel-btn" onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            className={`confirm-ok-btn ${confirmDanger ? "danger" : "safe"}`}
-            onClick={onConfirm}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Order Row ────────────────────────────────────────────────────────────────
-
-interface OrderRowProps {
-  order: Order;
-  onApprove: (order: Order) => void;
-  onDecline: (order: Order) => void;
-  onDeliver: (order: Order) => void;
-  onScrap: (order: Order) => void;
-  showDeliverButton: boolean;
-  showApproveDecline: boolean;
-}
-
-function OrderRow({
-  order,
-  onApprove,
-  onDecline,
-  onDeliver,
-  onScrap,
-  showDeliverButton,
-  showApproveDecline,
-}: OrderRowProps) {
-  const [expanded, setExpanded] = useState(false);
-
-  const handleToggle = async () => {
-    setExpanded((prev) => !prev);
-    if (!expanded && order.isNewForAdmin) {
-      await markOrderViewedByAdmin(order.id);
-    }
-  };
-
-  const statusBadgeClass =
-    {
-      pending: "badge-pending",
-      active: "badge-active",
-      declined: "badge-declined",
-      delivered: "badge-delivered",
-    }[order.status] ?? "badge-pending";
-
-  return (
-    <div className={`order-row ${order.isNewForAdmin ? "order-row-new" : ""}`}>
-      <div className="order-row-summary">
-        <div className="order-row-left">
-          {order.isNewForAdmin && (
-            <span className="new-dot" title="New order" />
-          )}
-          {isOrderExpired(order) &&
-            (order.status === "pending" || order.status === "active") && (
-              <span
-                className="expired-badge"
-                title={
-                  order.status === "pending"
-                    ? "Delivery window has passed — consider declining this order"
-                    : "Delivery window has passed — mark as delivered or decline"
-                }
-              >
-                ⚠ Overdue
-              </span>
-            )}
-          <span className="order-code">{order.orderCode}</span>
-          <span className="order-customer">{order.customerName}</span>
-          <span className="order-city">{order.deliveryAddress.city}</span>
-        </div>
-
-        <div className="order-row-right">
-          <span className="order-delivery-time">
-            {formatDateTime(order.deliveryDate, order.deliveryTime)}
-          </span>
-          <span
-            className={`order-payment-badge ${order.paymentMethod === "pay_on_delivery" ? "payment-cod" : "payment-digital"}`}
-          >
-            {paymentLabel(order.paymentMethod)}
-          </span>
-          <span className={`order-status-badge ${statusBadgeClass}`}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-          </span>
-
-          {showDeliverButton && (
-            <>
-              <button
-                className="deliver-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeliver(order);
-                }}
-                title="Mark as delivered"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </button>
-              <button
-                className="scrap-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onScrap(order);
-                }}
-                title="Scrap order"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                  <path d="M9 6V4h6v2" />
-                </svg>
-              </button>
-            </>
-          )}
-
-          <button
-            className={`order-expand-btn ${expanded ? "expanded" : ""}`}
-            onClick={handleToggle}
-            aria-label={expanded ? "Collapse" : "Expand"}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="order-row-detail">
-          <div className="order-detail-grid">
-            <div className="order-detail-section">
-              <h4>Customer</h4>
-              <p>{order.customerName}</p>
-              <p>{order.customerEmail}</p>
-              <p>{order.customerPhone}</p>
-            </div>
-
-            <div className="order-detail-section">
-              <h4>Delivery</h4>
-              <p>{formatDateTime(order.deliveryDate, order.deliveryTime)}</p>
-              <p>{order.deliveryAddress.fullAddress}</p>
-            </div>
-
-            <div className="order-detail-section">
-              <h4>Order Info</h4>
-              <p>Placed: {formatOrderDate(order.orderDate)}</p>
-              <p>Payment: {paymentLabel(order.paymentMethod)}</p>
-              <p>
-                Subtotal: <strong>${order.subtotal.toFixed(2)}</strong>
-              </p>
-              {order.adminNotes && (
-                <p className="admin-notes-text">Note: {order.adminNotes}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="order-items-list">
-            <h4>Items Ordered</h4>
-            {order.items.map((item, i) => (
-              <div key={i} className="order-item-row">
-                <div className="order-item-info">
-                  <span className="order-item-name">{item.dishName}</span>
-                  <span className="order-item-category">{item.category}</span>
-                </div>
-                <div className="order-item-quantities">
-                  {item.quantities.map((q) => (
-                    <span key={q.size} className="order-item-qty">
-                      {q.size.charAt(0).toUpperCase() + q.size.slice(1)} ×
-                      {q.quantity} — ${(q.price * q.quantity).toFixed(2)}
-                    </span>
-                  ))}
-                </div>
-                {item.specialInstructions && (
-                  <span className="order-item-note">
-                    Note: {item.specialInstructions}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {showApproveDecline && (
-            <div className="order-actions">
-              {!isOrderExpired(order) && (
-                <button
-                  className="approve-btn"
-                  onClick={() => onApprove(order)}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Approve Order
-                </button>
-              )}
-              <button className="decline-btn" onClick={() => onDecline(order)}>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-                Decline Order
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Section ──────────────────────────────────────────────────────────────────
-
-interface OrderSectionProps {
-  title: string;
-  orders: Order[];
-  totalOrders: Order[];
-  emptyMessage: string;
-  onApprove: (order: Order) => void;
-  onDecline: (order: Order) => void;
-  onDeliver: (order: Order) => void;
-  onScrap: (order: Order) => void;
-  showDeliverButton?: boolean;
-  showApproveDecline?: boolean;
-  accentColor?: string;
-  hidden?: boolean;
-  page: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-}
-
-function OrderSection({
-  title,
-  orders,
-  totalOrders,
-  emptyMessage,
-  onApprove,
-  onDecline,
-  onDeliver,
-  onScrap,
-  showDeliverButton = false,
-  showApproveDecline = false,
-  accentColor = "#6b7e3f",
-  hidden = false,
-  page,
-  pageSize,
-  onPageChange,
-}: OrderSectionProps) {
-  if (hidden) return null;
-
-  const totalPages = Math.ceil(totalOrders.length / pageSize);
-
-  return (
-    <section className="orders-section">
-      <div
-        className="orders-section-header"
-        style={{ borderLeftColor: accentColor }}
-      >
-        <h2 className="orders-section-title">{title}</h2>
-        <span className="orders-section-count">{totalOrders.length}</span>
-      </div>
-
-      {totalOrders.length === 0 ? (
-        <p className="orders-empty">{emptyMessage}</p>
-      ) : (
-        <>
-          <div className="orders-list">
-            {orders.map((order) => (
-              <OrderRow
-                key={order.id}
-                order={order}
-                onApprove={onApprove}
-                onDecline={onDecline}
-                onDeliver={onDeliver}
-                onScrap={onScrap}
-                showDeliverButton={showDeliverButton}
-                showApproveDecline={showApproveDecline}
-              />
-            ))}
-          </div>
-          {totalPages > 1 && (
-            <div className="orders-pagination">
-              <button
-                className="pagination-btn"
-                onClick={() => onPageChange(page - 1)}
-                disabled={page === 0}
-              >
-                ← Newer
-              </button>
-              <span className="pagination-info">
-                {page + 1} / {totalPages}
-              </span>
-              <button
-                className="pagination-btn"
-                onClick={() => onPageChange(page + 1)}
-                disabled={page >= totalPages - 1}
-              >
-                Older →
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const profile = useUserProfile();
   const isAdmin = user && profile?.role === "admin";
 
@@ -452,61 +39,35 @@ export default function Orders() {
   } | null>(null);
   const [declineNote, setDeclineNote] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-  const PAGE_SIZE = 5;
+
   const [newPage, setNewPage] = useState(0);
   const [activePage, setActivePage] = useState(0);
   const [inactivePage, setInactivePage] = useState(0);
 
   useEffect(() => {
-    if (user && profile && !isAdmin) {
+    if (authLoading) return;
+    if (!isAdmin) {
       navigate("/");
+      return;
     }
-  }, [user, profile, isAdmin, navigate]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    const unsubscribe = subscribeToAllOrders((allOrders) => {
-      setOrders(allOrders);
+    const unsubscribe = subscribeToAllOrders((all) => {
+      setOrders(all);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [isAdmin]);
+  }, [isAdmin, authLoading, navigate]);
 
   const newOrders = orders
     .filter((o) => o.status === "pending")
-    .sort((a, b) => {
-      const dateA = new Date(
-        `${new Date(a.deliveryDate).toDateString()} ${a.deliveryTime}`,
-      );
-      const dateB = new Date(
-        `${new Date(b.deliveryDate).toDateString()} ${b.deliveryTime}`,
-      );
-      return dateA.getTime() - dateB.getTime();
-    });
+    .sort((a, b) => deliveryDateTime(a) - deliveryDateTime(b));
 
   const activeOrders = orders
     .filter((o) => o.status === "active")
-    .sort((a, b) => {
-      const dateA = new Date(
-        `${new Date(a.deliveryDate).toDateString()} ${a.deliveryTime}`,
-      );
-      const dateB = new Date(
-        `${new Date(b.deliveryDate).toDateString()} ${b.deliveryTime}`,
-      );
-      return dateA.getTime() - dateB.getTime();
-    });
+    .sort((a, b) => deliveryDateTime(a) - deliveryDateTime(b));
 
   const inactiveOrders = orders
-    .filter((o) => o.status === "declined" || o.status === "delivered")
-    .sort((a, b) => {
-      const dateA = new Date(
-        `${new Date(a.deliveryDate).toDateString()} ${a.deliveryTime}`,
-      );
-      const dateB = new Date(
-        `${new Date(b.deliveryDate).toDateString()} ${b.deliveryTime}`,
-      );
-      return dateB.getTime() - dateA.getTime();
-    });
+    .filter((o) => o.status === "delivered" || o.status === "declined")
+    .sort((a, b) => deliveryDateTime(b) - deliveryDateTime(a));
 
   const clampedNewPage = Math.min(
     newPage,
