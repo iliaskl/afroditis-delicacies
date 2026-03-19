@@ -138,6 +138,14 @@ export default function Orders() {
         await markOrderDelivered(order.id);
       } else if (type === "scrap") {
         await declineOrder(order.id, declineNote.trim() || undefined);
+        const { getOrderById } = await import("../services/orderService");
+        const updatedOrder = await getOrderById(order.id);
+        if (updatedOrder) {
+          await emailService.sendOrderScrappedToCustomer(
+            updatedOrder,
+            declineNote.trim() || undefined,
+          );
+        }
       }
     } catch (error) {
       console.error("Action failed:", error);

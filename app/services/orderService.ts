@@ -237,6 +237,7 @@ export async function getBlockedDays(): Promise<string[]> {
 export function subscribeToBlockedDays(
   callback: (days: string[]) => void,
 ): () => void {
+  purgePastCalendarData();
   return onSnapshot(BLOCKED_DAYS_DOC, (snap) => {
     callback(snap.exists() ? ((snap.data().days as string[]) ?? []) : []);
   });
@@ -256,6 +257,38 @@ export async function unblockDay(date: Date): Promise<void> {
   const snap = await getDoc(BLOCKED_DAYS_DOC);
   const existing: string[] = snap.exists() ? (snap.data().days ?? []) : [];
   await setDoc(BLOCKED_DAYS_DOC, { days: existing.filter((d) => d !== key) });
+}
+
+export async function purgePastCalendarData(): Promise<void> {
+  const todayKey = dateKey(new Date());
+
+  try {
+    const blockedSnap = await getDoc(BLOCKED_DAYS_DOC);
+    if (blockedSnap.exists()) {
+      const current: string[] = blockedSnap.data().days ?? [];
+      const filtered = current.filter((d) => d >= todayKey);
+      if (filtered.length !== current.length) {
+        await setDoc(BLOCKED_DAYS_DOC, { days: filtered });
+      }
+    }
+  } catch (error) {
+    console.error("Error purging past blocked days:", error);
+  }
+
+  try {
+    const slotsSnap = await getDoc(BOOKED_SLOTS_DOC);
+    if (slotsSnap.exists()) {
+      const slotsMap = slotsSnap.data() as Record<string, string[]>;
+      const filtered = Object.fromEntries(
+        Object.entries(slotsMap).filter(([key]) => key >= todayKey),
+      );
+      if (Object.keys(filtered).length !== Object.keys(slotsMap).length) {
+        await setDoc(BOOKED_SLOTS_DOC, filtered);
+      }
+    }
+  } catch (error) {
+    console.error("Error purging past booked slots:", error);
+  }
 }
 
 // ─── Booked Slots ─────────────────────────────────────────────────────────────

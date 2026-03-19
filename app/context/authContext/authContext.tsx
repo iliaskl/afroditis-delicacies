@@ -22,7 +22,7 @@ interface AuthContextType {
   loading: boolean;
   register: (formData: AuthFormData) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (password?: string) => Promise<void>;
   logout: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -65,8 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loginUser(email, password);
   }
 
-  async function loginWithGoogle(): Promise<void> {
-    await signInWithGoogle();
+  async function loginWithGoogle(password?: string): Promise<void> {
+    await signInWithGoogle(password);
   }
 
   async function logout(): Promise<void> {

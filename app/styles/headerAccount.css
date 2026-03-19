@@ -1705,3 +1705,80 @@ body.modal-open {
   margin: 0 0 1.5rem 0;
   line-height: 1.5;
 }
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #fafaf5;
+  border: 1px solid rgba(107, 126, 63, 0.15);
+}
+
+.favorite-item-image-wrap {
+  flex-shrink: 0;
+}
+
+.favorite-item-image {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.favorite-item-image--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e8e8e0, #f5f5f0);
+  color: #aaa;
+}
+
+.favorite-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.favorite-item-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3319;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favorite-item-price {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.9rem;
+  color: #6b7e3f;
+}
+
+.favorite-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.favorite-order-btn {
+  background: #4a5e28;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.85rem;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.favorite-order-btn:hover {
+  background: #3a4d1e;
+}
