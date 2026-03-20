@@ -32,6 +32,7 @@ import { auth, db } from "../firebase/firebase";
 import type { UserProfile, AuthFormData } from "../types/types";
 import { emailService } from "./emailService";
 import { clearCart } from "./cartService";
+import { sanitizeText, MAX_LENGTHS } from "../utils/sanitize";
 
 function validatePassword(password: string): {
   isValid: boolean;
@@ -101,16 +102,25 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       });
     }
 
+    const sanitizedFirst = sanitizeText(
+      formData.firstName || "",
+      MAX_LENGTHS.name,
+    );
+    const sanitizedLast = sanitizeText(
+      formData.lastName || "",
+      MAX_LENGTHS.name,
+    );
+
     const userProfileData: Omit<UserProfile, "createdAt" | "updatedAt"> & {
       createdAt: Timestamp;
       updatedAt: Timestamp;
     } = {
       uid: user.uid,
-      email: formData.email,
-      firstName: formData.firstName || "",
-      lastName: formData.lastName || "",
-      displayName: `${formData.firstName} ${formData.lastName}`,
-      phoneNumber: formData.phoneNumber,
+      email: sanitizeText(formData.email, MAX_LENGTHS.email),
+      firstName: sanitizedFirst,
+      lastName: sanitizedLast,
+      displayName: `${sanitizedFirst} ${sanitizedLast}`,
+      phoneNumber: sanitizeText(formData.phoneNumber || "", MAX_LENGTHS.phone),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       role: "customer",

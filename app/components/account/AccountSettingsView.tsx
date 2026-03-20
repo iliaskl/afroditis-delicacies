@@ -1,8 +1,13 @@
-// app/components/account/AccountSettingsView.tsx
 import { useState } from "react";
 import { useAuth } from "../../context/authContext/authContext";
 import AddressAutocomplete from "../addressAutocomplete/AddressAutocomplete";
 import type { AddressDetails } from "../../services/addressService";
+import {
+  sanitizeText,
+  isValidEmail,
+  isValidPhone,
+  MAX_LENGTHS,
+} from "../../utils/sanitize";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -119,26 +124,50 @@ const AccountSettingsView: React.FC = () => {
         return;
       }
 
-      const updates: any = {};
+      const sanitizedFirst = sanitizeText(
+        settingsData.firstName,
+        MAX_LENGTHS.name,
+      );
+      const sanitizedLast = sanitizeText(
+        settingsData.lastName,
+        MAX_LENGTHS.name,
+      );
+      const sanitizedPhone = sanitizeText(
+        settingsData.phoneNumber,
+        MAX_LENGTHS.phone,
+      );
+      const sanitizedEmail = sanitizeText(
+        settingsData.email,
+        MAX_LENGTHS.email,
+      );
 
-      if (
-        settingsData.firstName &&
-        settingsData.firstName !== userProfile?.firstName
-      )
-        updates.firstName = settingsData.firstName;
-      if (
-        settingsData.lastName &&
-        settingsData.lastName !== userProfile?.lastName
-      )
-        updates.lastName = settingsData.lastName;
-      if (updates.firstName || updates.lastName) {
-        updates.displayName = `${settingsData.firstName || userProfile?.firstName} ${settingsData.lastName || userProfile?.lastName}`;
+      if (settingsData.email && settingsData.email !== user?.email) {
+        if (!isValidEmail(sanitizedEmail)) {
+          setError("Please enter a valid email address.");
+          return;
+        }
       }
       if (
         settingsData.phoneNumber &&
         settingsData.phoneNumber !== userProfile?.phoneNumber
-      )
-        updates.phoneNumber = settingsData.phoneNumber;
+      ) {
+        if (!isValidPhone(sanitizedPhone)) {
+          setError("Please enter a valid 10-digit US phone number.");
+          return;
+        }
+      }
+
+      const updates: any = {};
+
+      if (sanitizedFirst && sanitizedFirst !== userProfile?.firstName)
+        updates.firstName = sanitizedFirst;
+      if (sanitizedLast && sanitizedLast !== userProfile?.lastName)
+        updates.lastName = sanitizedLast;
+      if (updates.firstName || updates.lastName) {
+        updates.displayName = `${sanitizedFirst || userProfile?.firstName} ${sanitizedLast || userProfile?.lastName}`;
+      }
+      if (sanitizedPhone && sanitizedPhone !== userProfile?.phoneNumber)
+        updates.phoneNumber = sanitizedPhone;
 
       const addressChanged =
         settingsData.street !== (userProfile?.address?.street || "") ||
@@ -164,7 +193,7 @@ const AccountSettingsView: React.FC = () => {
       }
 
       if (settingsData.email && settingsData.email !== user?.email) {
-        await changeEmail(settingsData.email);
+        await changeEmail(sanitizedEmail);
         successMessage +=
           (successMessage ? " " : "") + "Email updated successfully!";
       }
@@ -241,6 +270,7 @@ const AccountSettingsView: React.FC = () => {
                 value={settingsData.firstName}
                 onChange={handleSettingsChange}
                 placeholder="Enter your first name"
+                maxLength={MAX_LENGTHS.name}
               />
             </div>
             <div className="form-group">
@@ -252,6 +282,7 @@ const AccountSettingsView: React.FC = () => {
                 value={settingsData.lastName}
                 onChange={handleSettingsChange}
                 placeholder="Enter your last name"
+                maxLength={MAX_LENGTHS.name}
               />
             </div>
           </div>
@@ -267,6 +298,7 @@ const AccountSettingsView: React.FC = () => {
               onChange={handleSettingsChange}
               placeholder="(555) 123-4567"
               required
+              maxLength={MAX_LENGTHS.phone}
             />
           </div>
         </div>
@@ -368,6 +400,7 @@ const AccountSettingsView: React.FC = () => {
               value={settingsData.email}
               onChange={handleSettingsChange}
               placeholder="your@email.com"
+              maxLength={MAX_LENGTHS.email}
             />
           </div>
           <div className="form-group">
