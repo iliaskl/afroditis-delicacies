@@ -16,6 +16,7 @@ import type { Order } from "../types/types";
 import OrderSection from "../components/orders/OrderSection";
 import ConfirmDialog from "../components/orders/ConfirmDialog";
 import "../styles/orders.css";
+import { sanitizeText, MAX_LENGTHS } from "../utils/sanitize";
 
 const PAGE_SIZE = 5;
 
@@ -47,7 +48,7 @@ export default function Orders() {
   useEffect(() => {
     if (authLoading) return;
     if (!isAdmin) {
-      navigate("/");
+      navigate("/404");
       return;
     }
     const unsubscribe = subscribeToAllOrders((all) => {
@@ -125,25 +126,29 @@ export default function Orders() {
           await emailService.sendOrderApprovedToCustomer(updatedOrder);
         }
       } else if (type === "decline") {
-        await declineOrder(order.id, declineNote.trim() || undefined);
+        const sanitizedNote =
+          sanitizeText(declineNote, MAX_LENGTHS.declineNote) || undefined;
+        await declineOrder(order.id, sanitizedNote);
         const { getOrderById } = await import("../services/orderService");
         const updatedOrder = await getOrderById(order.id);
         if (updatedOrder) {
           await emailService.sendOrderDeclinedToCustomer(
             updatedOrder,
-            declineNote.trim() || undefined,
+            sanitizedNote,
           );
         }
       } else if (type === "deliver") {
         await markOrderDelivered(order.id);
       } else if (type === "scrap") {
-        await declineOrder(order.id, declineNote.trim() || undefined);
+        const sanitizedNote =
+          sanitizeText(declineNote, MAX_LENGTHS.declineNote) || undefined;
+        await declineOrder(order.id, sanitizedNote);
         const { getOrderById } = await import("../services/orderService");
         const updatedOrder = await getOrderById(order.id);
         if (updatedOrder) {
           await emailService.sendOrderScrappedToCustomer(
             updatedOrder,
-            declineNote.trim() || undefined,
+            sanitizedNote,
           );
         }
       }
@@ -163,7 +168,7 @@ export default function Orders() {
     setDeclineNote("");
   };
 
-  if (!isAdmin) return null;
+  if (authLoading || !isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -268,6 +273,7 @@ export default function Orders() {
                 onChange={(e) => setDeclineNote(e.target.value)}
                 placeholder="e.g. Unavailable on that date, please choose another day."
                 rows={3}
+                maxLength={MAX_LENGTHS.declineNote}
               />
             </div>
           }

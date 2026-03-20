@@ -12,6 +12,7 @@ import {
   getBookedTimesForDate,
   subscribeToBlockedDays,
   dateKey,
+  getRecentOrderCountForUser,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
 import type { AddressDetails } from "../services/addressService";
@@ -21,6 +22,12 @@ import DeliveryScheduler, {
   getEarliestDeliveryDate,
 } from "../components/checkout/DeliveryScheduler";
 import "../styles/checkout.css";
+import {
+  sanitizeText,
+  isValidEmail,
+  isValidPhone,
+  MAX_LENGTHS,
+} from "../utils/sanitize";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -305,8 +312,16 @@ export default function Checkout() {
       setSubmitError("Please enter your email address.");
       return;
     }
+    if (!isValidEmail(email)) {
+      setSubmitError("Please enter a valid email address.");
+      return;
+    }
     if (!phone.trim()) {
       setSubmitError("Please enter your phone number.");
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setSubmitError("Please enter a valid 10-digit US phone number.");
       return;
     }
     if (!addressDetails) {
@@ -345,6 +360,15 @@ export default function Checkout() {
       return;
     }
 
+    // TODO: uncomment this and test before actual prod and deploy. Prevents each user from placing more than 3 orders within 24 hours to avoid spam and abuse.
+
+    // const recentCount = await getRecentOrderCountForUser(user!.uid);
+    // if (recentCount >= 3) {
+    //   setSubmitError(
+    //     "You've placed too many orders in the last 24 hours. Please try again later.",
+    //   );
+    //   return;
+    // }
     setSubmitting(true);
     try {
       const items: OrderItem[] = cartItems.map((item) => ({
@@ -362,9 +386,9 @@ export default function Checkout() {
 
       const orderId = await placeOrder({
         userId: user!.uid,
-        customerName: `${firstName.trim()} ${lastName.trim()}`,
-        customerEmail: email.trim(),
-        customerPhone: phone.trim(),
+        customerName: `${sanitizeText(firstName, MAX_LENGTHS.name)} ${sanitizeText(lastName, MAX_LENGTHS.name)}`,
+        customerEmail: sanitizeText(email, MAX_LENGTHS.email),
+        customerPhone: sanitizeText(phone, MAX_LENGTHS.phone),
         items,
         subtotal: cartTotal,
         paymentMethod,
@@ -455,7 +479,8 @@ export default function Checkout() {
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Eleni"
+                      placeholder="First Name"
+                      maxLength={MAX_LENGTHS.name}
                     />
                   </div>
                   <div className="checkout-field">
@@ -464,7 +489,8 @@ export default function Checkout() {
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Papadopoulos"
+                      placeholder="Last Name"
+                      maxLength={MAX_LENGTHS.name}
                     />
                   </div>
                 </div>
@@ -476,6 +502,7 @@ export default function Checkout() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@email.com"
+                      maxLength={MAX_LENGTHS.email}
                     />
                   </div>
                   <div className="checkout-field">
@@ -485,6 +512,7 @@ export default function Checkout() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="(206) 555-0123"
+                      maxLength={MAX_LENGTHS.phone}
                     />
                   </div>
                 </div>
@@ -627,7 +655,7 @@ export default function Checkout() {
                 <button
                   className="place-order-btn"
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || orderSuccess}
                 >
                   {submitting ? "Placing Order…" : "Place Order"}
                 </button>

@@ -14,6 +14,12 @@ import { db } from "../firebase/firebase";
 import type { MenuItem, MenuCategory } from "../types/types";
 
 export async function uploadDishImage(file: File): Promise<string> {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!allowedTypes.includes(file.type))
+    throw new Error("Only JPG, PNG, WebP, or GIF images are allowed.");
+  if (file.size > 5 * 1024 * 1024)
+    throw new Error("Image must be smaller than 5MB.");
+
   try {
     const formData = new FormData();
     formData.append("file", file);

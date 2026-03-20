@@ -1782,3 +1782,48 @@ body.modal-open {
 .favorite-order-btn:hover {
   background: #3a4d1e;
 }
+
+.linked-account-status {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.95rem;
+  color: #4a5e28;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.settings-hint {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0 0 0.75rem 0;
+}
+
+.google-link-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 1.5px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.google-link-button:hover:not(:disabled) {
+  background: #f8f8f8;
+  border-color: #bbb;
+}
+
+.google-link-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

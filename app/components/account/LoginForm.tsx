@@ -111,21 +111,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
     }
   };
 
-  const handleGoogleSignIn = async (password?: string) => {
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      await loginWithGoogle(password);
-      setLinkingEmail(null);
-      setLinkingPassword("");
+      await loginWithGoogle();
       setSuccess("Successfully signed in with Google!");
       setTimeout(onClose, 1500);
     } catch (err: any) {
-      if (err.code === "auth/needs-password-to-link") {
-        setLinkingEmail(err.email || "your account");
-        setError(err.message);
-      } else if (err.message !== "Sign-in cancelled") {
+      if (err.message !== "Sign-in cancelled") {
         setError(err.message || "Failed to sign in with Google");
       }
     } finally {
@@ -277,30 +272,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onForgotPassword }) => {
         <span>or</span>
       </div>
 
-      {linkingEmail && (
-        <div className="form-group">
-          <label htmlFor="linkingPassword">Password for {linkingEmail}</label>
-          <input
-            type="password"
-            id="linkingPassword"
-            value={linkingPassword}
-            onChange={(e) => setLinkingPassword(e.target.value)}
-            placeholder="Enter your password to link accounts"
-            disabled={loading}
-          />
-          <button
-            type="button"
-            className="submit-button"
-            disabled={loading || !linkingPassword}
-            onClick={() => handleGoogleSignIn(linkingPassword)}
-          >
-            {loading ? "Linking..." : "Link & Sign In"}
-          </button>
-        </div>
-      )}
       <button
         className="google-signin-button"
-        onClick={() => handleGoogleSignIn()}
+        onClick={handleGoogleSignIn}
         disabled={loading}
         type="button"
       >
