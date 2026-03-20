@@ -86,6 +86,11 @@ const Header = () => {
                   </a>
                 </div>
                 <div className="nav-item">
+                  <a href="/how-to-order" className="nav-link">
+                    How to Order
+                  </a>
+                </div>
+                <div className="nav-item">
                   <a href="/about" className="nav-link">
                     About Us
                   </a>

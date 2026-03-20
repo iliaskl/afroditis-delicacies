@@ -182,6 +182,9 @@ export default function Home() {
                   <a href="/menu" className="btn-primary">
                     See what's cooking!
                   </a>
+                  <a href="/how-to-order" className="btn-secondary">
+                    How to Order
+                  </a>
                 </div>
               </div>
             </div>
