@@ -1,0 +1,242 @@
+/* app/styles/how-to-order.css */
+
+.hto-page {
+  min-height: 100vh;
+  background-color: #f9f9f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.hto-main {
+  flex: 1;
+}
+
+/* ── Hero ── */
+
+.hto-hero {
+  text-align: center;
+  padding: 4rem 1.5rem 3rem;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.hto-hero-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 3rem;
+  font-weight: 500;
+  color: #2c2c2c;
+  margin: 0 0 1rem 0;
+}
+
+.hto-hero-subtitle {
+  font-size: 1.05rem;
+  color: #5c5c5c;
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* ── Sections ── */
+
+.hto-section {
+  padding: 3.5rem 1.5rem;
+}
+
+.hto-section-tinted {
+  background-color: rgba(107, 126, 63, 0.06);
+}
+
+.hto-section-inner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.hto-section-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.9rem;
+  font-weight: 500;
+  color: #2c2c2c;
+  margin: 0 0 0.75rem 0;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hto-section-intro {
+  font-size: 1rem;
+  color: #5c5c5c;
+  line-height: 1.8;
+  margin: 0 auto 2rem;
+  max-width: 860px;
+}
+
+/* ── Steps ── */
+
+.hto-steps {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.hto-step {
+  display: flex;
+  gap: 1.75rem;
+  align-items: flex-start;
+}
+
+.hto-step-number {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2.8rem;
+  font-weight: 300;
+  color: rgba(107, 126, 63, 0.3);
+  line-height: 1;
+  min-width: 3rem;
+  padding-top: 0.1rem;
+  user-select: none;
+}
+
+.hto-step-content {
+  flex: 1;
+  padding-top: 0.35rem;
+}
+
+.hto-step-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2c2c2c;
+  margin: 0 0 0.4rem 0;
+}
+
+.hto-step-body {
+  font-size: 1rem;
+  color: #5c5c5c;
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* ── Lead Times ── */
+
+.hto-lead-times {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.hto-lead-time-card {
+  background-color: white;
+  border: 1px solid rgba(107, 126, 63, 0.2);
+  border-top: 3px solid rgba(107, 126, 63, 1);
+  border-radius: 2px;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.hto-lead-time-label {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c2c2c;
+  margin-bottom: 0.3rem;
+}
+
+.hto-lead-time-detail {
+  font-size: 0.9rem;
+  color: #5c5c5c;
+  margin-bottom: 0.75rem;
+}
+
+.hto-lead-time-notice {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(107, 126, 63, 1);
+}
+
+/* ── Payment Methods ── */
+
+.hto-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.hto-payment-card {
+  background-color: white;
+  border: 1px solid rgba(107, 126, 63, 0.2);
+  border-radius: 2px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+
+.hto-payment-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c2c2c;
+  margin-bottom: 0.4rem;
+}
+
+.hto-payment-desc {
+  font-size: 0.9rem;
+  color: #5c5c5c;
+  line-height: 1.5;
+}
+
+/* ── CTA ── */
+
+.hto-cta {
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+.hto-cta-text {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.5rem;
+  color: #2c2c2c;
+  margin: 0 0 1.25rem 0;
+}
+
+.hto-cta-btn {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background-color: rgba(107, 126, 63, 1);
+  color: white;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.hto-cta-btn:hover {
+  background-color: rgba(90, 106, 53, 1);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 700px) {
+  .hto-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hto-lead-times {
+    grid-template-columns: 1fr;
+  }
+
+  .hto-payment-methods {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hto-step-number {
+    font-size: 2rem;
+    min-width: 2.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .hto-payment-methods {
+    grid-template-columns: 1fr;
+  }
+}
