@@ -26,7 +26,7 @@ const Footer = () => (
       <div className="footer-columns">
         {/* Social links */}
         <div className="footer-column">
-          <h4>Follow Us:</h4>
+          <h4>Follow Us</h4>
           <div className="social-links">
             {SOCIAL_LINKS.map(({ label, href, path }) => (
               <a
@@ -48,11 +48,12 @@ const Footer = () => (
         {/* Tagline */}
         <div className="footer-column">
           <h2>Greek Homemade Food</h2>
+          <p className="footer-tagline">Bothell, WA · Est. 2018</p>
         </div>
 
         {/* Contact */}
         <div className="footer-column">
-          <h4>Email Us:</h4>
+          <h4>Email Us</h4>
           <a href="mailto:info@afroditisdelicacies.com">
             info@afroditisdelicacies.com
           </a>

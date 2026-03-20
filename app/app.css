@@ -1,61 +1,102 @@
 @import "tailwindcss";
 
+/* ─── Google Fonts are loaded via root.tsx links() ─── */
+
+/* ══════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES — Single source of truth
+   Never redefine these variables in component CSS files
+══════════════════════════════════════════════════════ */
 :root {
-  --primary-green: #6b7e3f;
-  --secondary-green: #8b9966;
-  --dark-green: #4a5530;
-  --light-green: #a8b88a;
-  --cream: #f5f5dc;
-  --warm-white: #fefefe;
-  --text-dark: #2d3319;
-  --text-medium: #5a6b42;
-  --accent-gold: #d4af37;
+  /* ── Brand Greens ── */
+  --sage: #6b7e3f;
+  --sage-dark: #4a5530;
+  --sage-mid: #8b9966;
+  --sage-light: #a8b88a;
+  --sage-tint: #eef2e6;
+
+  /* ── Gold Accents ── */
+  --gold: #b8922a;
+  --gold-soft: #dfc98a;
+
+  /* ── Backgrounds ── */
+  --warm-white: #f5f0e4;
+  --parchment: #ede5d0;
+  --linen: #e5dbc8;
+
+  /* ── Text ── */
+  --ink: #1c1a14;
+  --ink-mid: #5a6b42;
+  --ink-light: #8a9a6a;
+  --muted: #7a7265;
+
+  /* ── Borders ── */
+  --border: rgba(28, 26, 20, 0.1);
+  --border-med: rgba(28, 26, 20, 0.18);
+  --border-sage: rgba(107, 126, 63, 0.22);
+
+  /* ── Semantic ── */
+  --badge-red: #c75146;
 }
 
+/* ══════════════════════════════════════════════════════
+   TAILWIND THEME TOKENS
+══════════════════════════════════════════════════════ */
 @theme inline {
   --color-background: var(--warm-white);
-  --color-foreground: var(--text-dark);
-  --font-sans: var(--font-cormorant);
+  --color-foreground: var(--ink);
+
+  --font-sans: "Outfit", sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-display: "Playfair Display", serif;
   --font-mono: monospace;
-
-  --color-greek-gold-50: #fffbeb;
-  --color-greek-gold-100: #fef3c7;
-  --color-greek-gold-200: #fed7aa;
-  --color-greek-gold-300: #fdba74;
-  --color-greek-gold-400: #fb923c;
-  --color-greek-gold-500: #f59e0b;
-  --color-greek-gold-600: #d97706;
-  --color-greek-gold-700: #b45309;
-  --color-greek-gold-800: #92400e;
-  --color-greek-gold-900: #78350f;
-
-  --color-olive-50: #f7fee7;
-  --color-olive-100: #ecfccb;
-  --color-olive-200: #d9f99d;
-  --color-olive-300: #bef264;
-  --color-olive-400: #a3e635;
-  --color-olive-500: #84cc16;
-  --color-olive-600: #65a30d;
-  --color-olive-700: #4d7c0f;
-  --color-olive-800: #3f6212;
-  --color-olive-900: #365314;
 
   --animate-slide: slide 15s infinite;
   --animate-fade-in: fadeIn 0.5s ease-in;
-  --animate-bounce-gentle: bounceGentle 2s infinite;
+  --animate-fade-up: fadeUp 0.5s ease forwards;
+}
+
+/* ══════════════════════════════════════════════════════
+   PAPER GRAIN TEXTURE — Warm Editorial signature detail
+══════════════════════════════════════════════════════ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+}
+
+/* ══════════════════════════════════════════════════════
+   GLOBAL BASE STYLES
+══════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
 }
 
 body {
   background: var(--warm-white);
-  color: var(--text-dark);
-  font-family: var(--font-cormorant), serif;
+  color: var(--ink);
+  font-family: "Outfit", sans-serif;
+  font-weight: 300;
   margin: 0;
   padding: 0;
   line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-* {
-  box-sizing: border-box;
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 h1,
@@ -64,14 +105,25 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-cormorant), serif;
-  color: var(--text-dark);
+  font-family: "Playfair Display", serif;
+  color: var(--ink);
 }
 
-.script-font {
-  font-family: var(--font-dancing), cursive;
+a {
+  color: var(--sage);
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
+a:hover {
+  color: var(--sage-dark);
+}
+
+/* ══════════════════════════════════════════════════════
+   KEYFRAME ANIMATIONS
+══════════════════════════════════════════════════════ */
+
+/* Carousel slide — used by homepage image carousel */
 @keyframes slide {
   0%,
   20% {
@@ -94,33 +146,24 @@ h6 {
   }
 }
 
-@keyframes fadeIn {
-  0% {
+/* Fade up — staggered text reveals */
+@keyframes fadeUp {
+  from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
-  100% {
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes bounceGentle {
-  0%,
-  100% {
-    transform: translateY(0);
+/* Fade in — image panel reveal, no movement */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  50% {
-    transform: translateY(-10px);
+  to {
+    opacity: 1;
   }
-}
-
-a {
-  color: var(--primary-green);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-a:hover {
-  color: var(--dark-green);
 }

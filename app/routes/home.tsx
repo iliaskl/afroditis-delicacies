@@ -1,6 +1,7 @@
 // app/routes/home.tsx
 import type { Route } from "./+types/home";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/home.css";
@@ -16,228 +17,140 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-const baseFoodImages = [
-  { url: pastitsioImage, alt: "Delicious Pastitsio", title: "Pastitsio" },
-  { url: tyropitaImage, alt: "Cheese Pie", title: "Tyropita" },
-  { url: tritipImage, alt: "Tri-Tip", title: "Tri-Tip" },
-  { url: pastitsioImage, alt: "Traditional Greek Moussaka", title: "Moussaka" },
-  { url: tyropitaImage, alt: "Fresh Spanakopita", title: "Spanakopita" },
-  { url: tritipImage, alt: "Sweet Baklava", title: "Baklava" },
+// ── Panel image pools ──────────────────────────────────────────────────────
+// Top and bottom panels draw from separate arrays so they never show the
+// same dish at the same time. Add more images here when available — no other
+// changes needed.
+const topImages = [
+  { url: pastitsioImage, label: "Pastitsio" },
+  { url: tritipImage, label: "Tri-Tip" },
+  { url: tyropitaImage, label: "Tyropita" },
 ];
 
-const reviews = [
-  {
-    stars: 5,
-    title: "Amazing spanakopita",
-    text: "Spanakopita is amazingly delicious, and you get the real taste of Greece, with traditional handmade fyllo!! Afroditi's Delicacies also delivered it warm at my place. I would highly recommend her menu for any occasion with your beloved ones... because you just have to share this kind of food with the ones you love!",
-    author: "Eleni",
-  },
-  {
-    stars: 5,
-    title: "Loved it!",
-    text: "Amazing Baklava. The best I have ever had.",
-    author: "Harsh",
-  },
-  {
-    stars: 5,
-    title: "Great value – Personalised menus",
-    text: "Amazing food!!! Well presented.. people loved it!",
-    author: "Priti",
-  },
+const bottomImages = [
+  { url: tyropitaImage, label: "Tyropita" },
+  { url: pastitsioImage, label: "Pastitsio" },
+  { url: tritipImage, label: "Tri-Tip" },
 ];
+
+// Slide direction type
+type SlideDir = "left" | "right" | null;
 
 export default function Home() {
-  const [foodImages] = useState(() => shuffleArray(baseFoodImages));
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [topIndex, setTopIndex] = useState(0);
+  const [bottomIndex, setBottomIndex] = useState(0);
+  const [topDir, setTopDir] = useState<SlideDir>(null);
+  const [bottomDir, setBottomDir] = useState<SlideDir>(null);
 
+  const topTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bottomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Advance top panel every 7s, then bottom panel 2.5s later
   useEffect(() => {
-    if (!isAutoPlaying) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % foodImages.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, foodImages.length]);
+    const cycle = () => {
+      // Top panel slides out to the right
+      setTopDir("right");
+      topTimer.current = setTimeout(() => {
+        setTopIndex((i) => (i + 1) % topImages.length);
+        setTopDir(null);
+      }, 600);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % foodImages.length);
-    setIsAutoPlaying(false);
-    setTimeout(() => setIsAutoPlaying(true), 10000);
-  };
+      // Bottom panel slides out to the left 2.5s after top
+      bottomTimer.current = setTimeout(() => {
+        setBottomDir("left");
+        setTimeout(() => {
+          setBottomIndex((i) => (i + 1) % bottomImages.length);
+          setBottomDir(null);
+        }, 600);
+      }, 2500);
+    };
 
-  const prevSlide = () => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + foodImages.length) % foodImages.length,
-    );
-    setIsAutoPlaying(false);
-    setTimeout(() => setIsAutoPlaying(true), 10000);
-  };
+    const interval = setInterval(cycle, 7000);
+    return () => {
+      clearInterval(interval);
+      if (topTimer.current) clearTimeout(topTimer.current);
+      if (bottomTimer.current) clearTimeout(bottomTimer.current);
+    };
+  }, []);
 
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index);
-    setIsAutoPlaying(false);
-    setTimeout(() => setIsAutoPlaying(true), 10000);
-  };
+  const topImg = topImages[topIndex];
+  const bottomImg = bottomImages[bottomIndex];
 
   return (
-    <div className="min-h-screen bg-white font-sans flex flex-col">
+    <div className="home-page">
       <Header />
-      <main className="w-full grow">
-        <section className="hero-section">
-          <div className="container mx-auto px-4 py-8 md:py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div className="relative w-full">
-                <div className="carousel-container">
-                  <div
-                    className="carousel-track"
-                    style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-                  >
-                    {foodImages.map((image, index) => (
-                      <div key={index} className="carousel-slide">
-                        <img
-                          src={image.url}
-                          alt={image.alt}
-                          className="carousel-image"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = "none";
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `<div class="placeholder-image"><div class="placeholder-text"><p class="placeholder-title">${image.title}</p><p class="placeholder-subtitle">Image coming soon</p></div></div>`;
-                            }
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+      <main className="hero">
+        {/* ── LEFT: text panel ── */}
+        <div className="hero-left">
+          <div className="hero-eyebrow">
+            <span className="hero-eyebrow-text">
+              Seattle · Handmade · Greek
+            </span>
+          </div>
 
-                  <button
-                    onClick={prevSlide}
-                    className="carousel-arrow carousel-arrow-left"
-                    aria-label="Previous slide"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={nextSlide}
-                    className="carousel-arrow carousel-arrow-right"
-                    aria-label="Next slide"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+          <h1 className="hero-title">
+            Authentic Greek food,
+            <br />
+            <em>made with love</em>
+            <br />
+            <span className="light">delivered to your door.</span>
+          </h1>
 
-                  <div className="carousel-dots">
-                    {foodImages.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className={`carousel-dot ${currentSlide === index ? "carousel-dot-active" : ""}`}
-                        aria-label={`Go to slide ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
+          <p className="hero-sub">
+            Every dish made from scratch, to order, every time.
+          </p>
 
-              <div className="hero-info-box">
-                <h1 className="hero-title">Greek Homemade Food</h1>
-                <p className="hero-subtitle">
-                  Catering and personal chef services in Seattle! Try our
-                  mousaka, pastitsio, pies, desserts and more.
-                </p>
-                <div className="hero-buttons">
-                  <a href="/menu" className="btn-primary">
-                    See what's cooking!
-                  </a>
-                  <a href="/how-to-order" className="btn-secondary">
-                    How to Order
-                  </a>
-                </div>
-              </div>
+          <div className="hero-actions">
+            <Link to="/menu" className="btn-primary">
+              See What's Cooking
+            </Link>
+            <Link to="/how-to-order" className="btn-ghost">
+              How to Order
+            </Link>
+          </div>
+
+          <div className="trust-strip">
+            <div className="trust-item">
+              <div className="trust-check">✓</div>
+              <span className="trust-label">Made from scratch</span>
+            </div>
+            <div className="trust-item">
+              <div className="trust-check">✓</div>
+              <span className="trust-label">Local delivery</span>
+            </div>
+            <div className="trust-item">
+              <div className="trust-check">✓</div>
+              <span className="trust-label">No frozen ingredients</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="reviews-section">
-          <div className="container mx-auto px-4">
-            <h2 className="section-title">What Our Customers Say</h2>
-            <div className="reviews-grid">
-              {reviews.map((review, index) => (
-                <div key={index} className="review-card">
-                  <div className="review-stars">
-                    {[...Array(review.stars)].map((_, i) => (
-                      <svg key={i} className="star-icon" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <h3 className="review-title">"{review.title}"</h3>
-                  <p className="review-text">{review.text}</p>
-                  <p className="review-author">{review.author}</p>
-                </div>
-              ))}
+        {/* ── RIGHT: stacked cycling dish panels ── */}
+        <div className="hero-right">
+          {/* Top panel — slides out to the right */}
+          <div className="dish-panel dish-panel-top">
+            <div
+              className={`dish-photo${topDir ? ` slide-out-${topDir}` : ""}`}
+              style={{ backgroundImage: `url(${topImg.url})` }}
+            />
+            <div className="dish-scrim" />
+            <div className="dish-name-tag">
+              <span className="dish-name-label">{topImg.label}</span>
             </div>
           </div>
-        </section>
 
-        <section className="video-section">
-          <div className="container mx-auto px-4">
-            <div className="video-container-wrapper">
-              <h2 className="section-title">As Featured on SKAI TV</h2>
-              <p className="video-description">
-                Watch our exclusive interview about bringing authentic Greek
-                cuisine to Seattle
-              </p>
-              <div className="video-embed-container">
-                <div className="video-aspect-ratio">
-                  <video className="video-iframe" controls>
-                    <source
-                      src="../../src/videos/feature_vid.mp4"
-                      type="video/mp4"
-                    />
-                  </video>
-                </div>
-              </div>
-              <p className="video-caption">
-                Discover the story behind Afroditi's Delicacies and our passion
-                for authentic Greek flavors
-              </p>
+          {/* Bottom panel — slides out to the left */}
+          <div className="dish-panel dish-panel-bottom dish-panel-name-right">
+            <div
+              className={`dish-photo${bottomDir ? ` slide-out-${bottomDir}` : ""}`}
+              style={{ backgroundImage: `url(${bottomImg.url})` }}
+            />
+            <div className="dish-scrim" />
+            <div className="dish-name-tag">
+              <span className="dish-name-label">{bottomImg.label}</span>
             </div>
           </div>
-        </section>
+        </div>
       </main>
       <Footer />
     </div>
