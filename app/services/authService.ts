@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  linkWithPopup,
   GoogleAuthProvider,
   linkWithCredential,
   signOut,
@@ -124,7 +125,7 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
   }
 }
 
-export async function signInWithGoogle(password?: string): Promise<User> {
+export async function signInWithGoogle(): Promise<User> {
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
@@ -158,38 +159,34 @@ export async function signInWithGoogle(password?: string): Promise<User> {
     return user;
   } catch (error) {
     const authError = error as AuthError;
-    if (authError.code === "auth/account-exists-with-different-credential") {
-      if (!password) {
-        const linkingError = new Error(
-          "An account with this email already exists. Please enter your password to link your Google account.",
-        );
-        (linkingError as any).code = "auth/needs-password-to-link";
-        (linkingError as any).email = authError.customData?.email as string;
-        throw linkingError;
-      }
-
-      const email = authError.customData?.email as string;
-      const credential = GoogleAuthProvider.credentialFromError(authError);
-      if (!credential) throw new Error("Failed to get Google credential.");
-
-      const emailResult = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
-      await linkWithCredential(emailResult.user, credential);
-
-      await updateDoc(doc(db, "users", emailResult.user.uid), {
-        lastLogin: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-
-      return emailResult.user;
-    }
-
     console.error("Google sign-in error:", authError);
     if (authError.code === "auth/popup-closed-by-user")
       throw new Error("Sign-in cancelled");
+    throw new Error(getAuthErrorMessage(authError));
+  }
+}
+
+export async function linkGoogleToAccount(): Promise<void> {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No user signed in.");
+
+    const provider = new GoogleAuthProvider();
+    await linkWithPopup(user, provider);
+
+    await updateDoc(doc(db, "users", user.uid), {
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    const authError = error as AuthError;
+    if (authError.code === "auth/popup-closed-by-user")
+      throw new Error("Sign-in cancelled");
+    if (authError.code === "auth/credential-already-in-use")
+      throw new Error(
+        "This Google account is already linked to a different account.",
+      );
+    if (authError.code === "auth/provider-already-linked")
+      throw new Error("Your account is already linked to Google.");
     throw new Error(getAuthErrorMessage(authError));
   }
 }

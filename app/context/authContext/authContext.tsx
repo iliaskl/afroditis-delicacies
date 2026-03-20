@@ -6,6 +6,7 @@ import {
   registerUser,
   loginUser,
   signInWithGoogle,
+  linkGoogleToAccount,
   logoutUser,
   resetPassword,
   getUserProfile,
@@ -22,7 +23,8 @@ interface AuthContextType {
   loading: boolean;
   register: (formData: AuthFormData) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: (password?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  linkGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -65,8 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loginUser(email, password);
   }
 
-  async function loginWithGoogle(password?: string): Promise<void> {
-    await signInWithGoogle(password);
+  async function loginWithGoogle(): Promise<void> {
+    await signInWithGoogle();
+  }
+
+  async function linkGoogle(): Promise<void> {
+    await linkGoogleToAccount();
+    await user?.reload();
   }
 
   async function logout(): Promise<void> {
@@ -114,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     login,
     loginWithGoogle,
+    linkGoogle,
     logout,
     sendPasswordReset,
     refreshProfile,
