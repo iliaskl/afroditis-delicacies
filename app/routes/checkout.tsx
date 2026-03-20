@@ -12,6 +12,7 @@ import {
   getBookedTimesForDate,
   subscribeToBlockedDays,
   dateKey,
+  getRecentOrderCountForUser,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
 import type { AddressDetails } from "../services/addressService";
@@ -359,6 +360,15 @@ export default function Checkout() {
       return;
     }
 
+    // TODO: uncomment this and test before actual prod and deploy. Prevents each user from placing more than 3 orders within 24 hours to avoid spam and abuse.
+
+    // const recentCount = await getRecentOrderCountForUser(user!.uid);
+    // if (recentCount >= 3) {
+    //   setSubmitError(
+    //     "You've placed too many orders in the last 24 hours. Please try again later.",
+    //   );
+    //   return;
+    // }
     setSubmitting(true);
     try {
       const items: OrderItem[] = cartItems.map((item) => ({
