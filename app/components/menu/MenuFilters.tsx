@@ -1,4 +1,4 @@
-// app/components/menu/MenuFilters.tsx
+// MenuFilters.tsx — remove menuItems prop and count chip entirely
 import type { MenuCategory } from "../../types/types";
 
 interface MenuFiltersProps {
@@ -19,27 +19,25 @@ export default function MenuFilters({
   const allCategories = ["Full Menu", ...categories.map((cat) => cat.name)];
 
   return (
-    <>
-      <div className="menu-filters">
-        {allCategories.map((category) => (
-          <button
-            key={category}
-            onClick={() => onSelectCategory(category)}
-            className={`filter-btn ${selectedCategory === category ? "active" : ""}`}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
+    <nav className="menu-sidebar-nav">
+      <p className="menu-sidebar-label">Categories</p>
+
+      {allCategories.map((category) => (
+        <button
+          key={category}
+          onClick={() => onSelectCategory(category)}
+          className={`menu-sidebar-btn${selectedCategory === category ? " active" : ""}`}
+        >
+          <span className="menu-sidebar-btn-name">{category}</span>
+        </button>
+      ))}
 
       {isAdmin && (
-        <div className="add-category-section">
-          <button onClick={onOpenAddCategory} className="add-category-btn">
-            <span className="plus-icon">+</span>
-            Add Category
-          </button>
-        </div>
+        <button onClick={onOpenAddCategory} className="menu-sidebar-add-btn">
+          <span>+</span>
+          Add Category
+        </button>
       )}
-    </>
+    </nav>
   );
 }

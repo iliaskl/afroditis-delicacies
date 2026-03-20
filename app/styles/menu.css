@@ -1,209 +1,392 @@
-.menu-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
+/* ── app/styles/menu.css ── */
+
+/* ═══════════════════════════════════════════════
+   PAGE LAYOUT — sidebar + scrollable main
+═══════════════════════════════════════════════ */
+
+.menu-page {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  flex: 1;
+  min-height: 0;
 }
 
-.menu-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.menu-header h1 {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 2.8rem;
-  color: #6b7e3f;
-  margin-bottom: 0.8rem;
-  font-weight: 600;
-}
-
-.menu-header p {
-  font-size: 1rem;
-  color: #5a6b42;
-  font-family: "Cormorant Garamond", serif;
-}
-
-.menu-filters {
+.menu-sidebar {
+  position: sticky;
+  top: 80px;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: var(--warm-white);
+  border-right: 1px solid var(--border);
+  padding: 28px 0 40px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.4rem;
-  margin-bottom: 2.5rem;
-  padding: 0 1rem;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* ORIGINAL filter buttons - NOT CHANGED */
-.filter-btn {
-  background: white;
-  border: 1px solid #8b9966;
-  color: #6b7e3f;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+.menu-main {
+  padding: 28px 48px 60px 36px;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+.menu-loading-text,
+.menu-error-text {
   font-family: "Cormorant Garamond", serif;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--muted);
+  padding: 48px 0;
+}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR — category nav
+═══════════════════════════════════════════════ */
+
+.menu-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.menu-sidebar-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.58rem;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 20px 10px;
+  margin: 0;
+}
+
+.menu-sidebar-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  text-align: left;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
 }
 
-.filter-btn:hover {
-  background: #a8b88a;
+.menu-sidebar-btn:hover {
+  background: var(--sage-tint);
 }
 
-.filter-btn.active {
-  background: #6b7e3f;
-  color: white;
-  border-color: #6b7e3f;
+.menu-sidebar-btn.active {
+  background: var(--sage-tint);
+  border-left-color: var(--sage);
 }
 
-.menu-category {
-  margin-bottom: 2.5rem;
+.menu-sidebar-btn-name {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--ink-mid);
+  transition: color 0.18s;
 }
 
-/* Updated category header layout */
-.category-header,
-.category-header-row {
+.menu-sidebar-btn:hover .menu-sidebar-btn-name,
+.menu-sidebar-btn.active .menu-sidebar-btn-name {
+  color: var(--sage);
+}
+
+.menu-sidebar-btn.active .menu-sidebar-btn-name {
+  font-weight: 500;
+}
+
+.menu-sidebar-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 20px 0;
+  padding: 9px 16px;
+  background: none;
+  border: 1px solid var(--border-sage);
+  color: var(--sage);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background 0.18s;
+}
+
+.menu-sidebar-add-btn:hover {
+  background: var(--sage-tint);
+}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR — lead time info card
+═══════════════════════════════════════════════ */
+
+.menu-leadtime-card {
+  margin: 24px 16px 0;
+  background: var(--warm-white);
+  border: 1px solid var(--border-sage);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.menu-leadtime-eyebrow {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.58rem;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+.menu-leadtime-row {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  border-top: 1px solid var(--border);
+}
+
+.menu-leadtime-row:first-of-type {
+  border-top: none;
+}
+
+.menu-leadtime-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 300;
+  color: var(--muted);
+}
+
+.menu-leadtime-value {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--gold-soft);
+}
+
+/* ═══════════════════════════════════════════════
+   CATEGORY SECTIONS
+═══════════════════════════════════════════════ */
+
+.menu-category {
+  margin-bottom: 36px;
+}
+
+/*
+  Layout: [title] [admin icons] [──── rule ────] [SMALL] [/] [LARGE]
+  The rule stretches to fill all space between icons and size labels.
+  Size label columns are 80px each — same as .price-column below —
+  so they sit pixel-perfect over the prices.
+*/
+.category-header-row {
+  display: flex;
   align-items: center;
-  border-bottom: 2px solid #2d3319;
-  padding-bottom: 0.5rem;
+  gap: 10px;
   margin-bottom: 1rem;
-  position: relative;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ink);
 }
 
 .category-title {
   font-family: "Cormorant Garamond", serif;
   font-size: 1.8rem;
-  color: #2d3319;
-  margin: 0;
   font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.category-admin-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
   flex-shrink: 0;
 }
 
-/* Admin Controls - Centered in the row */
-.category-admin-controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+/* Expanding rule between admin icons and size labels */
+.category-header-rule {
+  flex: 1;
+  height: 0;
+  /* rule is already provided by border-bottom on the row —
+     this element just takes up the space */
 }
 
-/* Styled Admin Icon Buttons - White background, colored icons */
+/* Size column headers — sit above .price-column price cells */
+.category-size-headers {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.category-size-col {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  width: 80px;
+  text-align: center;
+}
+
+.category-size-sep {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.6rem;
+  color: var(--muted);
+  width: 12px;
+  text-align: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* Spacer used when no size headers — keeps rule consistent */
+.category-size-placeholder {
+  width: 172px; /* 80 + ~12 sep + 80 */
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN ICON BUTTONS
+═══════════════════════════════════════════════ */
+
 .admin-icon-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: white;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    transform 0.18s;
+  background: var(--warm-white);
   padding: 0;
 }
 
 .admin-icon-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   stroke-width: 2;
 }
 
-/* Edit Button - Green icon, flips on hover */
 .admin-icon-btn.edit-btn {
-  color: #6b7e3f;
-  border: 1px solid #6b7e3f;
+  color: var(--sage);
+  border: 1px solid var(--border-sage);
 }
 
 .admin-icon-btn.edit-btn:hover {
-  background: #6b7e3f;
+  background: var(--sage);
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(107, 126, 63, 0.3);
+  transform: translateY(-1px);
 }
 
-/* Delete Button - Red icon, flips on hover */
 .admin-icon-btn.delete-btn {
-  color: #c75146;
-  border: 1px solid #c75146;
+  color: var(--badge-red);
+  border: 1px solid rgba(199, 81, 70, 0.28);
 }
 
 .admin-icon-btn.delete-btn:hover {
-  background: #c75146;
+  background: var(--badge-red);
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(199, 81, 70, 0.3);
+  transform: translateY(-1px);
 }
 
-/* Add Button - Blue icon, flips on hover */
 .admin-icon-btn.add-btn {
-  color: #76a4b5;
-  border: 1px solid #76a4b5;
+  color: var(--ink-light);
+  border: 1px solid var(--border);
 }
 
 .admin-icon-btn.add-btn:hover {
-  background: #76a4b5;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(118, 164, 181, 0.3);
+  background: var(--sage-tint);
+  color: var(--sage);
+  border-color: var(--border-sage);
+  transform: translateY(-1px);
 }
 
 .admin-icon-btn:active {
   transform: translateY(0);
 }
 
-.size-header {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 0.9rem;
-  color: #2d3319;
-  font-weight: 500;
-  display: flex;
-  gap: 0;
-}
-
-.size-header-col {
-  width: 90px;
-  text-align: right;
-}
-
-.size-header {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1rem;
-  color: #2d3319;
-  font-weight: 400;
-  text-align: center;
-  min-width: 80px;
-}
+/* ═══════════════════════════════════════════════
+   DISH LIST ROWS
+═══════════════════════════════════════════════ */
 
 .menu-items {
-  border-bottom: 2px solid #2d3319;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .menu-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 0.8rem 0;
-  border-bottom: 1px solid #e0e0e0;
-  transition: opacity 0.3s ease;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  transition: opacity 0.2s ease;
+  position: relative;
 }
 
-/* Drag handle for menu items */
+.menu-item::before {
+  display: none;
+}
+
+.menu-item:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item.unavailable {
+  opacity: 0.8;
+}
+
+.menu-item.unavailable .item-name,
+.menu-item.unavailable .price {
+  color: var(--muted);
+}
+
+.menu-item.dragging {
+  opacity: 0.5;
+  background: var(--sage-tint);
+}
+
+.menu-item.drag-over {
+  border-top: 2px solid var(--sage);
+}
+
+.menu-item:not(.admin-view) .drag-handle {
+  display: none;
+}
+
+/* Drag handle */
 .drag-handle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-right: 12px;
+  width: 28px;
+  height: 28px;
+  margin-right: 10px;
   cursor: grab;
-  color: #6b7e3f;
+  color: var(--sage);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.18s;
   flex-shrink: 0;
 }
 
@@ -212,216 +395,92 @@
 }
 
 .drag-handle svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 
-/* Show drag handle on hover for admin */
 .menu-item:hover .drag-handle {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .drag-handle:hover {
   opacity: 1 !important;
 }
 
-/* Dragging state */
-.menu-item.dragging {
-  opacity: 0.5;
-  background: rgba(107, 126, 63, 0.1);
-}
-
-/* Drag over state */
-.menu-item.drag-over {
-  border-top: 3px solid #6b7e3f;
-}
-
-/* Update item-content to account for drag handle */
-.menu-item .item-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-/* Make sure drag handle doesn't show for non-admin users */
-.menu-item:not(.admin-view) .drag-handle {
-  display: none;
-}
-
-.menu-item:last-child {
-  border-bottom: none;
-}
-
-/* Unavailable item styling for admin */
-.menu-item.unavailable {
-  opacity: 0.8;
-}
-
-.menu-item.unavailable .item-name,
-.menu-item.unavailable .price {
-  color: #999;
-}
-
-.unavailable-badge {
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-  color: #c75146;
-  font-weight: 500;
-  font-style: italic;
-}
-
-/* Empty category message for admins */
-.empty-category {
-  padding: 2rem;
-  text-align: center;
-  color: #6b7e3f;
-  font-style: italic;
-}
-
-.empty-category p {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
+/* Item name + badges */
 .item-content {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 10px;
+  min-width: 0;
 }
 
 .item-name {
   font-family: "Cormorant Garamond", serif;
-  font-size: 1rem;
-  color: #2d3319;
-  margin: 0;
+  font-size: 1.05rem;
   font-weight: 400;
+  color: var(--ink);
+  margin: 0;
   line-height: 1.3;
 }
 
-.top-seller-badge {
-  background: none;
-  color: #2d3319;
-  padding: 0;
-  border-radius: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  font-family: "Cormorant Garamond", serif;
-  white-space: nowrap;
+.unavailable-badge {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--badge-red);
+  flex-shrink: 0;
 }
 
+/* Pricing */
 .item-pricing {
   display: flex;
   align-items: center;
-  min-width: 200px;
-  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .price {
   font-family: "Cormorant Garamond", serif;
   font-size: 1rem;
-  color: #2d3319;
   font-weight: 400;
-  text-align: right;
+  color: var(--sage);
 }
 
 .single-price {
-  width: 100px;
-  text-align: center;
-  display: inline-block;
+  width: 80px;
+  text-align: right;
 }
 
 .pies-pricing {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
 }
 
 .price-column {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1rem;
-  color: #2d3319;
-  font-weight: 400;
-  text-align: right;
-  width: 90px;
+  width: 80px;
+  text-align: center;
 }
 
-.menu-note {
-  background: #f5f5dc;
-  padding: 1.5rem;
-  border-radius: 6px;
-  border-left: 3px solid #6b7e3f;
-  margin-top: 2rem;
-}
-
-.menu-note p {
+.empty-category {
+  padding: 20px 0;
   font-family: "Cormorant Garamond", serif;
-  font-size: 0.9rem;
-  color: #2d3319;
-  line-height: 1.5;
-  margin: 0;
+  font-size: 0.95rem;
   font-style: italic;
+  color: var(--muted);
 }
 
-/* ================================
-   Add Category Section
-================================ */
-.add-category-section {
-  display: flex;
-  justify-content: center;
-  margin: 2rem 0;
-  padding: 1.5rem 0;
-  border-top: 1px solid rgba(107, 126, 63, 0.2);
-  border-bottom: 1px solid rgba(107, 126, 63, 0.2);
-}
+/* ═══════════════════════════════════════════════
+   ADMIN EDIT POPUPS
+═══════════════════════════════════════════════ */
 
-.add-category-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: linear-gradient(135deg, #6b7e3f 0%, #55692f 100%);
-  color: white;
-  border: none;
-  padding: 0.875rem 2rem;
-  border-radius: 12px;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.2rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(107, 126, 63, 0.25);
-}
-
-.add-category-btn .plus-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  font-weight: 300;
-}
-
-.add-category-btn:hover {
-  background: linear-gradient(135deg, #55692f 0%, #4a5528 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(107, 126, 63, 0.35);
-}
-
-.add-category-btn:active {
-  transform: translateY(-1px);
-}
-
-/* ================================
-   Admin Edit Popup - Updated Styling
-================================ */
-
-/* Overlay behind popup */
 .edit-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(45, 51, 25, 0.6);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  background: rgba(28, 26, 20, 0.55);
+  backdrop-filter: blur(3px);
   z-index: 9998;
   animation: fadeIn 0.2s ease-out;
 }
@@ -430,172 +489,163 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
 }
 
-/* Main popup container */
 .edit-menu-popup {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #f5f5dc 0%, #fafaed 100%);
-  border: 3px solid rgba(107, 126, 63, 0.8);
+  background: var(--warm-white);
+  border: 1px solid var(--border-med);
   padding: 2.5rem;
   width: 500px;
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  border-radius: 16px;
+  border-radius: 0;
   z-index: 9999;
-  box-shadow:
-    0 10px 40px rgba(45, 51, 25, 0.25),
-    0 0 0 1px rgba(107, 126, 63, 0.1) inset;
-  font-family: "Cormorant Garamond", serif;
-  color: #2d3319;
-  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 10px 40px rgba(28, 26, 20, 0.18);
+  font-family: "Outfit", sans-serif;
+  color: var(--ink);
+  animation: slideUp 0.25s ease-out;
 }
 
-/* Wider popup for add dish form */
 .add-dish-popup {
-  width: 600px;
+  width: 580px;
 }
 
 @keyframes slideUp {
   from {
-    transform: translate(-50%, -45%);
+    transform: translate(-50%, -46%);
     opacity: 0;
   }
-
   to {
     transform: translate(-50%, -50%);
     opacity: 1;
   }
 }
 
-/* Popup header */
 .edit-menu-popup h2 {
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
-  font-weight: 600;
-  color: #2d3319;
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 0.35rem;
   text-align: center;
-  letter-spacing: 0.5px;
 }
 
-/* Subtitle below header */
 .popup-subtitle {
-  text-align: center;
-  font-size: 1rem;
-  color: #6b7e3f;
-  margin-bottom: 1.5rem;
+  font-family: "Cormorant Garamond", serif;
   font-style: italic;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-align: center;
+  margin: 0 0 1.5rem;
 }
 
 .popup-subtitle.warning {
-  color: #c75146;
-  font-weight: 600;
+  color: var(--badge-red);
   font-style: normal;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
 }
 
-/* Form groups */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #2d3319;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
 }
 
-/* Form row for side-by-side inputs */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
-/* Current value display */
 .current-value {
-  background: rgba(107, 126, 63, 0.1);
-  border: 2px solid rgba(107, 126, 63, 0.3);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  font-size: 1.1rem;
-  color: #2d3319;
-  font-weight: 500;
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  color: var(--ink);
 }
 
-/* Input fields */
 .edit-menu-popup input[type="text"],
 .edit-menu-popup input[type="number"],
 .edit-menu-popup select {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid rgba(107, 126, 63, 0.3);
-  border-radius: 8px;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.1rem;
-  color: #2d3319;
+  padding: 10px 14px;
+  border: 1px solid var(--border-med);
+  border-radius: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.88rem;
+  color: var(--ink);
   background: white;
-  transition: all 0.2s ease;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s;
 }
 
 .edit-menu-popup input:focus,
 .edit-menu-popup select:focus {
   outline: none;
-  border-color: #6b7e3f;
-  box-shadow: 0 0 0 3px rgba(107, 126, 63, 0.1);
+  border-color: var(--sage);
+  box-shadow: 0 0 0 2px var(--sage-tint);
 }
 
 .edit-menu-popup input:disabled {
-  background: #f5f5f5;
+  background: var(--parchment);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .edit-menu-popup input::placeholder {
-  color: #a8b88a;
+  color: var(--muted);
   font-style: italic;
 }
 
-/* Checkbox styling */
 .checkbox-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
   cursor: pointer;
-  font-size: 1.1rem;
-  color: #2d3319;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.84rem;
+  color: var(--ink-mid);
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
-  accent-color: #6b7e3f;
+  accent-color: var(--sage);
 }
 
-.checkbox-label span {
-  user-select: none;
-}
-
-/* Image upload section */
 .image-upload-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 10px;
 }
 
 .file-input {
@@ -605,36 +655,37 @@
 .file-input-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  gap: 8px;
+  padding: 9px 16px;
   background: white;
-  border: 2px solid rgba(107, 126, 63, 0.3);
-  border-radius: 8px;
+  border: 1px solid var(--border-med);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1rem;
-  color: #2d3319;
+  transition:
+    border-color 0.18s,
+    background 0.18s;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.8rem;
+  color: var(--ink-mid);
   width: fit-content;
+  border-radius: 0;
 }
 
 .file-input-label svg {
-  width: 20px;
-  height: 20px;
-  color: #6b7e3f;
+  width: 16px;
+  height: 16px;
+  color: var(--sage);
 }
 
 .file-input-label:hover {
-  border-color: #6b7e3f;
-  background: rgba(107, 126, 63, 0.05);
+  border-color: var(--sage);
+  background: var(--sage-tint);
 }
 
 .image-preview {
-  width: 150px;
-  height: 150px;
-  border-radius: 8px;
+  width: 120px;
+  height: 120px;
   overflow: hidden;
-  border: 2px solid rgba(107, 126, 63, 0.3);
+  border: 1px solid var(--border);
 }
 
 .image-preview img {
@@ -643,214 +694,157 @@
   object-fit: cover;
 }
 
-.image-note {
-  font-size: 0.9rem;
-  color: #76a4b5;
-  font-style: italic;
-  margin: 0;
-}
-
-/* Confirmation text */
 .confirmation-text {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--ink-mid);
   text-align: center;
-  font-size: 1.1rem;
-  line-height: 1.6;
-  margin: 1.5rem 0;
-  color: #2d3319;
+  margin: 1rem 0 0;
 }
 
 .confirmation-text strong {
-  color: #6b7e3f;
-  font-weight: 600;
-}
-
-.warning-subtext {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 1rem;
-  color: #c75146;
+  color: var(--ink);
   font-weight: 500;
 }
 
-/* Button container */
 .popup-buttons {
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 10px;
+  margin-top: 1.75rem;
 }
 
-/* Base button styles */
 .edit-menu-popup button {
   flex: 1;
-  padding: 0.75rem 1.5rem;
+  padding: 12px 20px;
   border: none;
-  border-radius: 10px;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.1rem;
-  font-weight: 600;
+  border-radius: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.3px;
+  transition:
+    background 0.18s,
+    transform 0.18s;
 }
 
-/* Save button */
 .save-btn {
-  background: linear-gradient(135deg, #6b7e3f 0%, #55692f 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(107, 126, 63, 0.3);
+  background: var(--sage);
+  color: var(--warm-white);
 }
 
 .save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #55692f 0%, #4a5528 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(107, 126, 63, 0.4);
-}
-
-.save-btn:active:not(:disabled) {
-  transform: translateY(0);
+  background: var(--sage-dark);
+  transform: translateY(-1px);
 }
 
 .save-btn:disabled {
-  background: #a8b88a;
+  background: var(--sage-light);
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* Delete button */
 .delete-button {
-  background: linear-gradient(135deg, #c75146 0%, #b14139 100%);
+  background: var(--badge-red);
   color: white;
-  box-shadow: 0 4px 12px rgba(199, 81, 70, 0.3);
 }
 
 .delete-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b14139 0%, #9a352d 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(199, 81, 70, 0.4);
-}
-
-.delete-button:active:not(:disabled) {
-  transform: translateY(0);
+  background: #b14139;
+  transform: translateY(-1px);
 }
 
 .delete-button:disabled {
-  background: #d9a0a0;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Cancel button */
-.cancel-btn {
-  background: white;
-  color: #6b7e3f;
-  border: 2px solid #6b7e3f !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.cancel-btn:hover:not(:disabled) {
-  background: #f5f5dc;
-  border-color: #4a5528 !important;
-  color: #4a5528;
-  transform: translateY(-2px);
-}
-
-.cancel-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.cancel-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Responsive adjustments */
+.cancel-btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border-med) !important;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  border-color: var(--border-sage) !important;
+  color: var(--sage);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
-  .category-header,
-  .category-header-row {
-    flex-direction: column;
-    align-items: flex-start;
+  .menu-page {
+    grid-template-columns: 1fr;
   }
 
-  .category-admin-controls {
+  .menu-sidebar {
     position: static;
-    transform: none;
-    align-self: center;
-    margin: 0.5rem 0;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0 16px;
   }
 
-  .size-headers {
-    display: flex;
-    justify-content: flex-end;
+  .menu-sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px;
   }
 
-  .add-category-section {
-    padding: 1rem 0;
+  .menu-sidebar-label {
+    width: 100%;
+    padding: 0 0 6px;
+  }
+
+  .menu-sidebar-btn {
+    border-left: none;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 6px 14px;
+    width: auto;
+  }
+
+  .menu-sidebar-btn.active {
+    background: var(--sage-tint);
+    border-color: var(--border-sage);
+  }
+
+  .menu-leadtime-card {
+    margin: 12px 16px 0;
+  }
+
+  .menu-main {
+    padding: 20px 16px 48px;
   }
 
   .form-row {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .edit-menu-popup,
-  .add-dish-popup {
-    width: 95%;
-    padding: 2rem 1.5rem;
-  }
-
-  .edit-menu-popup h2 {
-    font-size: 1.6rem;
   }
 
   .popup-buttons {
     flex-direction: column;
   }
 
-  .edit-menu-popup button {
-    width: 100%;
+  .edit-menu-popup,
+  .add-dish-popup {
+    width: 95%;
+    padding: 2rem 1.25rem;
   }
 
-  .admin-icon-btn {
-    width: 32px;
-    height: 32px;
+  .category-size-headers {
+    display: none;
   }
 
-  .admin-icon-btn svg {
-    width: 18px;
-    height: 18px;
+  .category-size-placeholder {
+    display: none;
   }
-}
-
-/* Admin Styles */
-.menu-item.clickable {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.menu-item.clickable:hover {
-  background: rgba(107, 126, 63, 0.05);
-  transform: translateX(4px);
-}
-
-.menu-item.clickable:active {
-  background: rgba(107, 126, 63, 0.1);
-}
-
-/* Visual indicator that item is clickable */
-.menu-item.clickable .item-name {
-  position: relative;
-}
-
-.menu-item.clickable .item-name::after {
-  position: absolute;
-  right: -24px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  font-size: 0.9rem;
-  color: #6b7e3f;
-}
-
-.menu-item.clickable:hover .item-name::after {
-  opacity: 0.6;
 }
