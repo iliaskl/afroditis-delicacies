@@ -6,6 +6,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return Response.json({ error: "Method not allowed" }, { status: 405 });
   }
 
+  const origin = request.headers.get("origin");
+  const allowedOrigins = [
+    "https://afroditisdelicacies.com",
+    "https://www.afroditisdelicacies.com",
+    "https://afroditis-delicacies.vercel.app",
+    "http://localhost:5173", // TODO: Remove this in production
+  ];
+  if (!origin || !allowedOrigins.includes(origin)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error("[send-email] RESEND_API_KEY is not set");

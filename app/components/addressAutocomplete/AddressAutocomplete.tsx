@@ -56,7 +56,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-    if (value.length >= 3) {
+    if (value.length >= 4) {
       setIsLoading(true);
       searchTimeoutRef.current = setTimeout(async () => {
         try {
@@ -188,7 +188,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       {showSuggestions &&
         !isLoading &&
-        inputValue.length >= 3 &&
+        inputValue.length >= 4 &&
         suggestions.length === 0 && (
           <div className="no-results">
             No addresses found. Please try a different search.

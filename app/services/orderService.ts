@@ -394,3 +394,20 @@ export async function markOrderViewedByAdmin(orderId: string): Promise<void> {
     console.error("Error marking order as viewed:", error);
   }
 }
+
+// ─── Security ───────────────────────────────────────────────────────────────
+
+export async function getRecentOrderCountForUser(
+  userId: string,
+): Promise<number> {
+  const since = new Date();
+  since.setHours(since.getHours() - 24);
+  const snap = await getDocs(
+    query(
+      collection(db, "orders"),
+      where("userId", "==", userId),
+      where("orderDate", ">=", Timestamp.fromDate(since)),
+    ),
+  );
+  return snap.size;
+}

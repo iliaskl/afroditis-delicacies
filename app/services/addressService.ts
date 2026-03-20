@@ -37,7 +37,7 @@ class AddressService {
       return [];
     }
 
-    if (!input || input.length < 3) {
+    if (!input || input.length < 4) {
       return [];
     }
 
@@ -135,7 +135,7 @@ class AddressService {
     if (!city || !state) {
       const parts = suggestion.placeName.split(", ");
 
-      if (parts.length >= 3) {
+      if (parts.length >= 4) {
         street = parts[0];
         city = parts[1];
 
