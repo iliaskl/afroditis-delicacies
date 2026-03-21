@@ -14,11 +14,13 @@ interface EmailNotificationData {
 const BRAND = {
   green: "#6B7E3F",
   darkGreen: "#4A5530",
-  gold: "#D9C23F",
+  gold: "#B8922A",
   blue: "#76A4B5",
-  bg: "#F9F7F2",
-  text: "#2d3319",
-  lightBorder: "#e8e4d9",
+  bg: "#F5F0E4",
+  text: "#1C1A14",
+  muted: "#7A7265",
+  lightBorder: "#E0D8C8",
+  red: "#C75146",
 };
 
 function emailWrapper(content: string): string {
@@ -29,11 +31,11 @@ function emailWrapper(content: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Afroditi's Delicacies</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f0ede6;font-family:Georgia,serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0ede6;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#EDE5D0;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#EDE5D0;padding:32px 16px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:0;overflow:hidden;box-shadow:0 2px 16px rgba(28,26,20,0.10);">
 
           <!-- Header -->
           <tr>
@@ -53,9 +55,9 @@ function emailWrapper(content: string): string {
           <!-- Footer -->
           <tr>
             <td style="background:${BRAND.bg};border-top:1px solid ${BRAND.lightBorder};padding:24px 40px;text-align:center;">
-              <p style="margin:0 0 4px 0;font-size:13px;color:#7a8060;font-family:Georgia,serif;">Questions? Reach us at</p>
+              <p style="margin:0 0 4px 0;font-size:13px;color:${BRAND.muted};font-family:Georgia,serif;">Questions? Reach us at</p>
               <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};font-size:13px;text-decoration:none;font-family:Georgia,serif;">info@afroditisdelicacies.com</a>
-              <p style="margin:16px 0 0 0;font-size:11px;color:#aaa;font-family:Georgia,serif;">© ${new Date().getFullYear()} Afroditi's Delicacies · Bothell, WA</p>
+              <p style="margin:16px 0 0 0;font-size:11px;color:${BRAND.muted};font-family:Georgia,serif;">© ${new Date().getFullYear()} Afroditi's Delicacies · Bothell, WA</p>
             </td>
           </tr>
 
@@ -80,10 +82,10 @@ function orderItemsTable(order: Order): string {
           <tr>
             <td style="padding:8px 0;font-size:15px;color:${BRAND.text};font-family:Georgia,serif;">
               ${item.dishName}
-              <span style="font-size:13px;color:#888;"> (${q.size})</span>
-              ${item.specialInstructions ? `<br/><span style="font-size:12px;color:#888;font-style:italic;">Note: ${item.specialInstructions}</span>` : ""}
+              <span style="font-size:13px;color:${BRAND.muted};"> (${q.size})</span>
+              ${item.specialInstructions ? `<br/><span style="font-size:12px;color:${BRAND.muted};font-style:italic;">Note: ${item.specialInstructions}</span>` : ""}
             </td>
-            <td style="padding:8px 0;font-size:15px;color:#888;text-align:center;font-family:Georgia,serif;">×${q.quantity}</td>
+            <td style="padding:8px 0;font-size:15px;color:${BRAND.muted};text-align:center;font-family:Georgia,serif;">×${q.quantity}</td>
             <td style="padding:8px 0;font-size:15px;color:${BRAND.text};text-align:right;font-family:Georgia,serif;">$${(q.price * q.quantity).toFixed(2)}</td>
           </tr>`,
         )
@@ -129,30 +131,30 @@ function infoGrid(fields: { label: string; value: string }[]): string {
 }
 
 function alertBox(color: string, bgColor: string, html: string): string {
-  return `<div style="background:${bgColor};border-left:4px solid ${color};border-radius:6px;padding:16px 20px;margin:20px 0;font-family:Georgia,serif;font-size:15px;color:${BRAND.text};">${html}</div>`;
+  return `<div style="background:${bgColor};border-left:4px solid ${color};border-radius:0;padding:16px 20px;margin:20px 0;font-family:Georgia,serif;font-size:15px;color:${BRAND.text};">${html}</div>`;
 }
 
 function paymentBox(order: Order): string {
   if (order.paymentMethod === "pay_on_delivery") {
     return alertBox(
       BRAND.green,
-      "#f0f4e8",
+      "#EEF2E6",
       `<strong>Payment on Delivery</strong><br/>No action needed — we'll collect your payment when we arrive.`,
     );
   }
   if (order.paymentMethod === "venmo") {
     return alertBox(
       BRAND.blue,
-      "#eef4f7",
+      "#EDF3F6",
       `<strong>Venmo Payment</strong><br/>Please send <strong>$${order.subtotal.toFixed(2)}</strong> to:<br/>
       <a href="https://venmo.com/Afroditi-Kritikou" style="color:${BRAND.blue};font-weight:bold;">@Afroditi-Kritikou on Venmo</a>`,
     );
   }
   return alertBox(
     BRAND.gold,
-    "#fdf9e8",
+    "#F5F0E4",
     `<strong>PayPal Payment</strong><br/>Please send <strong>$${order.subtotal.toFixed(2)}</strong> to:<br/>
-    <a href="https://paypal.me/AfroditiSDeli" style="color:#b8860b;font-weight:bold;">paypal.me/AfroditiSDeli</a>`,
+    <a href="https://paypal.me/AfroditiSDeli" style="color:${BRAND.gold};font-weight:bold;">paypal.me/AfroditiSDeli</a>`,
   );
 }
 
@@ -207,7 +209,7 @@ class EmailService {
     try {
       const content = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Order Received!</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we've got your order and it's currently pending approval. We'll send you a confirmation once it's been reviewed.</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we've got your order and it's currently pending approval. We'll send you a confirmation once it's been reviewed.</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -226,7 +228,7 @@ class EmailService {
         ${infoGrid([
           {
             label: "Order ID",
-            value: `<span style="font-family:monospace;font-size:14px;background:#f5f5f0;padding:2px 8px;border-radius:4px;">${order.orderCode}</span>`,
+            value: `<span style="font-family:monospace;font-size:14px;background:#EEF2E6;padding:2px 8px;">${order.orderCode}</span>`,
           },
           { label: "Delivery", value: formatDeliveryDate(order) },
           { label: "Address", value: order.deliveryAddress.fullAddress },
@@ -235,7 +237,7 @@ class EmailService {
 
         ${paymentBox(order)}
 
-        <p style="margin:24px 0 0 0;font-size:15px;color:#666;font-family:Georgia,serif;line-height:1.7;">
+        <p style="margin:24px 0 0 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;line-height:1.7;">
           Thank you for choosing Afroditi's Delicacies. We'll be in touch shortly!<br/>
           <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
         </p>
@@ -259,7 +261,7 @@ class EmailService {
     try {
       const content = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">New Order Received</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">A new order has been placed and is awaiting your approval.</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">A new order has been placed and is awaiting your approval.</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -295,7 +297,7 @@ class EmailService {
         ${infoGrid([
           {
             label: "Order ID",
-            value: `<span style="font-family:monospace;font-size:14px;background:#f5f5f0;padding:2px 8px;border-radius:4px;">${order.orderCode}</span>`,
+            value: `<span style="font-family:monospace;font-size:14px;background:#EEF2E6;padding:2px 8px;">${order.orderCode}</span>`,
           },
           {
             label: "Order Date",
@@ -309,10 +311,10 @@ class EmailService {
           { label: "Payment", value: formatPaymentLabel(order.paymentMethod) },
         ])}
 
-        ${alertBox(BRAND.gold, "#fdf9e8", `<strong>Action Required:</strong> Log in to the website to approve or decline this order.`)}
+        ${alertBox(BRAND.gold, "#F5F0E4", `<strong>Action Required:</strong> Log in to the website to approve or decline this order.`)}
 
         <div style="text-align:center;margin-top:24px;">
-          <a href="https://www.afroditisdelicacies.com/orders" style="display:inline-block;background-color:${BRAND.darkGreen};color:#ffffff;font-family:Georgia,serif;font-size:15px;text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:0.5px;">View Order Dashboard</a>
+          <a href="https://www.afroditisdelicacies.com/orders" style="display:inline-block;background-color:${BRAND.darkGreen};color:#ffffff;font-family:Georgia,serif;font-size:15px;text-decoration:none;padding:14px 36px;border-radius:0;letter-spacing:0.5px;">View Order Dashboard</a>
         </div>
       `;
 
@@ -348,7 +350,7 @@ class EmailService {
     try {
       const content = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Your Order is Confirmed!</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, great news — your order has been approved and we're getting to work in the kitchen!</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, great news — your order has been approved and we're getting to work in the kitchen!</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -367,7 +369,7 @@ class EmailService {
         ${infoGrid([
           {
             label: "Order ID",
-            value: `<span style="font-family:monospace;font-size:14px;background:#f5f5f0;padding:2px 8px;border-radius:4px;">${order.orderCode}</span>`,
+            value: `<span style="font-family:monospace;font-size:14px;background:#EEF2E6;padding:2px 8px;">${order.orderCode}</span>`,
           },
           { label: "Delivery", value: formatDeliveryDate(order) },
           { label: "Address", value: order.deliveryAddress.fullAddress },
@@ -376,7 +378,7 @@ class EmailService {
 
         ${paymentBox(order)}
 
-        <p style="margin:24px 0 0 0;font-size:15px;color:#666;font-family:Georgia,serif;line-height:1.7;">
+        <p style="margin:24px 0 0 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;line-height:1.7;">
           We're cooking with love and can't wait for you to enjoy your meal!<br/>
           <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
         </p>
@@ -403,15 +405,15 @@ class EmailService {
     try {
       const noteHtml = adminNotes
         ? alertBox(
-            "#c75146",
-            "#fdf0ef",
+            BRAND.red,
+            "#FDF0EF",
             `<strong>Note from Afroditi:</strong><br/>${adminNotes}`,
           )
         : "";
 
       const content = `
-        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:#c75146;font-family:Georgia,serif;">Order Unable to be Fulfilled</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we're sorry — unfortunately we're unable to fulfill your order at this time.</p>
+        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.red};font-family:Georgia,serif;">Order Unable to be Fulfilled</h2>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we're sorry — unfortunately we're unable to fulfill your order at this time.</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -421,16 +423,16 @@ class EmailService {
         ${infoGrid([
           {
             label: "Order ID",
-            value: `<span style="font-family:monospace;font-size:14px;background:#f5f5f0;padding:2px 8px;border-radius:4px;">${order.orderCode}</span>`,
+            value: `<span style="font-family:monospace;font-size:14px;background:#EEF2E6;padding:2px 8px;">${order.orderCode}</span>`,
           },
           { label: "Requested Delivery", value: formatDeliveryDate(order) },
         ])}
 
         ${noteHtml}
 
-        ${alertBox(BRAND.green, "#f0f4e8", `We'd love to serve you another time! Feel free to place a new order with a different delivery date, or <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};">contact us</a> to discuss alternatives.`)}
+        ${alertBox(BRAND.green, "#EEF2E6", `We'd love to serve you another time! Feel free to place a new order with a different delivery date, or <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};">contact us</a> to discuss alternatives.`)}
 
-        <p style="margin:24px 0 0 0;font-size:15px;color:#666;font-family:Georgia,serif;line-height:1.7;">
+        <p style="margin:24px 0 0 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;line-height:1.7;">
           We apologize for the inconvenience.<br/>
           <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
         </p>
@@ -457,15 +459,15 @@ class EmailService {
     try {
       const noteHtml = adminNotes
         ? alertBox(
-            "#c75146",
-            "#fdf0ef",
+            BRAND.red,
+            "#FDF0EF",
             `<strong>Note from Afroditi:</strong><br/>${adminNotes}`,
           )
         : "";
 
       const content = `
-        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:#c75146;font-family:Georgia,serif;">Your Order Has Been Cancelled</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we're sorry — your approved order had to be cancelled.</p>
+        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.red};font-family:Georgia,serif;">Your Order Has Been Cancelled</h2>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we're sorry — your approved order had to be cancelled.</p>
 
         <table width="100%" cellpadding="0" cellspacing="0"><tbody>
           ${sectionDivider()}
@@ -475,16 +477,16 @@ class EmailService {
         ${infoGrid([
           {
             label: "Order ID",
-            value: `<span style="font-family:monospace;font-size:14px;background:#f5f5f0;padding:2px 8px;border-radius:4px;">${order.orderCode}</span>`,
+            value: `<span style="font-family:monospace;font-size:14px;background:#EEF2E6;padding:2px 8px;">${order.orderCode}</span>`,
           },
           { label: "Requested Delivery", value: formatDeliveryDate(order) },
         ])}
 
         ${noteHtml}
 
-        ${alertBox(BRAND.green, "#f0f4e8", `We sincerely apologize for the inconvenience. Please feel free to place a new order or <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};">contact us</a> directly and we'll do our best to accommodate you.`)}
+        ${alertBox(BRAND.green, "#EEF2E6", `We sincerely apologize for the inconvenience. Please feel free to place a new order or <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.green};">contact us</a> directly and we'll do our best to accommodate you.`)}
 
-        <p style="margin:24px 0 0 0;font-size:15px;color:#666;font-family:Georgia,serif;line-height:1.7;">
+        <p style="margin:24px 0 0 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;line-height:1.7;">
           We're sorry for any disruption this may have caused.<br/>
           <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
         </p>
@@ -512,14 +514,14 @@ class EmailService {
 
       const content = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Password Changed</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Your password for Afroditi's Delicacies has been successfully updated.</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Your password for Afroditi's Delicacies has been successfully updated.</p>
 
         ${infoGrid([
           { label: "Account", value: userEmail },
           { label: "Changed On", value: timestamp },
         ])}
 
-        ${alertBox("#c75146", "#fdf0ef", `If you did not make this change, please <a href="mailto:info@afroditisdelicacies.com" style="color:#c75146;font-weight:bold;">contact us immediately</a> or reset your password right away.`)}
+        ${alertBox(BRAND.red, "#FDF0EF", `If you did not make this change, please <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.red};font-weight:bold;">contact us immediately</a> or reset your password right away.`)}
       `;
 
       await this.sendEmail({
@@ -540,18 +542,18 @@ class EmailService {
     try {
       const notifyOld = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Email Address Changed</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">The email address on your Afroditi's Delicacies account has been updated.</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">The email address on your Afroditi's Delicacies account has been updated.</p>
         ${infoGrid([
           { label: "Old Email", value: oldEmail },
           { label: "New Email", value: newEmail },
         ])}
-        ${alertBox("#c75146", "#fdf0ef", `If you did not make this change, please <a href="mailto:info@afroditisdelicacies.com" style="color:#c75146;font-weight:bold;">contact us immediately</a>.`)}
+        ${alertBox(BRAND.red, "#FDF0EF", `If you did not make this change, please <a href="mailto:info@afroditisdelicacies.com" style="color:${BRAND.red};font-weight:bold;">contact us immediately</a>.`)}
       `;
 
       const notifyNew = `
         <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Welcome to Your New Email</h2>
-        <p style="margin:0 0 24px 0;font-size:15px;color:#666;font-family:Georgia,serif;">Your Afroditi's Delicacies account email has been successfully updated to <strong>${newEmail}</strong>.</p>
-        ${alertBox(BRAND.green, "#f0f4e8", `Future order notifications and updates will be sent to this address.`)}
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Your Afroditi's Delicacies account email has been successfully updated to <strong>${newEmail}</strong>.</p>
+        ${alertBox(BRAND.green, "#EEF2E6", `Future order notifications and updates will be sent to this address.`)}
       `;
 
       await this.sendEmail({

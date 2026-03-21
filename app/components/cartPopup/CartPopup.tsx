@@ -118,7 +118,13 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
               </svg>
               <h3>Your cart is empty</h3>
               <p>Add some delicious Greek dishes to get started!</p>
-              <button className="browse-menu-btn" onClick={onClose}>
+              <button
+                className="browse-menu-btn"
+                onClick={() => {
+                  onClose();
+                  navigate("/menu");
+                }}
+              >
                 Browse Menu
               </button>
             </div>
