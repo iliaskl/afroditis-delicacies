@@ -8,7 +8,7 @@ header {
   z-index: 50;
   flex-shrink: 0;
   min-height: 100px;
-  border-bottom: 1px solid var(--border-med);
+  border-bottom: 1rem solid #6b7e3f;
 }
 
 /* 3px sage gradient accent line at very top */

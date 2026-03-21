@@ -341,7 +341,7 @@ export default function Menu() {
     return (
       <div
         className="min-h-screen font-sans flex flex-col"
-        style={{ background: "var(--warm-white)" }}
+        style={{ background: "#ffffff" }}
       >
         <Header />
         <main className="menu-page">
@@ -359,7 +359,7 @@ export default function Menu() {
     return (
       <div
         className="min-h-screen font-sans flex flex-col"
-        style={{ background: "var(--warm-white)" }}
+        style={{ background: "#ffffff" }}
       >
         <Header />
         <main className="menu-page">
@@ -376,7 +376,7 @@ export default function Menu() {
   return (
     <div
       className="min-h-screen font-sans flex flex-col"
-      style={{ background: "var(--warm-white)" }}
+      style={{ background: "#ffffff" }}
     >
       <Header />
       <main className="menu-page">

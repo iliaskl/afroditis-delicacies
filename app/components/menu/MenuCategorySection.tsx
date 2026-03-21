@@ -103,7 +103,7 @@ export default function MenuCategorySection({
         {hasTwoPrices ? (
           <div className="category-size-headers">
             <span className="category-size-col">Small</span>
-            <span className="category-size-sep"> /</span>
+            {/* <span className="category-size-sep">/</span> */}
             <span className="category-size-col">Large</span>
           </div>
         ) : (

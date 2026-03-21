@@ -1,242 +1,246 @@
-/* app/styles/how-to-order.css */
+/* ── app/styles/how-to-order.css ── */
+
+/* ═══════════════════════════════════════════════
+   PAGE
+═══════════════════════════════════════════════ */
 
 .hto-page {
-  min-height: 100vh;
-  background-color: #f9f9f5;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 .hto-main {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 5% 72px;
 }
 
-/* ── Hero ── */
+/* ═══════════════════════════════════════════════
+   CENTERED CONTAINER
+═══════════════════════════════════════════════ */
 
-.hto-hero {
-  text-align: center;
-  padding: 4rem 1.5rem 3rem;
+.hto-container {
+  width: 100%;
   max-width: 680px;
-  margin: 0 auto;
 }
 
-.hto-hero-title {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 3rem;
-  font-weight: 500;
-  color: #2c2c2c;
-  margin: 0 0 1rem 0;
+/* ═══════════════════════════════════════════════
+   EYEBROW
+═══════════════════════════════════════════════ */
+
+.hto-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 16px;
 }
 
-.hto-hero-subtitle {
-  font-size: 1.05rem;
-  color: #5c5c5c;
-  line-height: 1.8;
-  margin: 0;
+.hto-eyebrow-line {
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--sage);
+  flex-shrink: 0;
 }
 
-/* ── Sections ── */
+/* ═══════════════════════════════════════════════
+   TITLE
+═══════════════════════════════════════════════ */
 
-.hto-section {
-  padding: 3.5rem 1.5rem;
+.hto-title {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.12;
+  margin: 0 0 36px;
 }
 
-.hto-section-tinted {
-  background-color: rgba(107, 126, 63, 0.06);
+.hto-title em {
+  font-style: italic;
+  color: var(--sage);
 }
 
-.hto-section-inner {
-  max-width: 860px;
-  margin: 0 auto;
-}
-
-.hto-section-title {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.9rem;
-  font-weight: 500;
-  color: #2c2c2c;
-  margin: 0 0 0.75rem 0;
-  max-width: 860px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.hto-section-intro {
-  font-size: 1rem;
-  color: #5c5c5c;
-  line-height: 1.8;
-  margin: 0 auto 2rem;
-  max-width: 860px;
-}
-
-/* ── Steps ── */
+/* ═══════════════════════════════════════════════
+   STEPS
+═══════════════════════════════════════════════ */
 
 .hto-steps {
-  max-width: 860px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0;
+  margin-bottom: 36px;
 }
 
 .hto-step {
   display: flex;
-  gap: 1.75rem;
+  gap: 20px;
   align-items: flex-start;
 }
 
 .hto-step-number {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 2.8rem;
-  font-weight: 300;
+  font-family: "Playfair Display", serif;
+  font-size: 1rem;
+  font-weight: 400;
   color: rgba(107, 126, 63, 0.3);
-  line-height: 1;
-  min-width: 3rem;
-  padding-top: 0.1rem;
-  user-select: none;
+  line-height: 1.6;
+  flex-shrink: 0;
+  width: 28px;
+  letter-spacing: 0.04em;
 }
 
 .hto-step-content {
   flex: 1;
-  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+  padding: 16px 0 20px;
 }
 
 .hto-step-title {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #2c2c2c;
-  margin: 0 0 0.4rem 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 6px;
 }
 
 .hto-step-body {
-  font-size: 1rem;
-  color: #5c5c5c;
-  line-height: 1.75;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.7;
   margin: 0;
 }
 
-/* ── Lead Times ── */
+.hto-step-footnote {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 300;
+  color: var(--sage);
+  letter-spacing: 0.06em;
+  margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   LEAD TIME CHIPS
+═══════════════════════════════════════════════ */
 
 .hto-lead-times {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-}
-
-.hto-lead-time-card {
-  background-color: white;
-  border: 1px solid rgba(107, 126, 63, 0.2);
-  border-top: 3px solid rgba(107, 126, 63, 1);
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
   border-radius: 2px;
-  padding: 1.5rem 1.25rem;
-  text-align: center;
+  overflow: hidden;
+  margin-bottom: 36px;
 }
 
-.hto-lead-time-label {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c2c2c;
-  margin-bottom: 0.3rem;
+.hto-lead-time-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 16px 12px;
+  background: #ffffff;
+  border-right: 1px solid var(--border);
 }
 
-.hto-lead-time-detail {
-  font-size: 0.9rem;
-  color: #5c5c5c;
-  margin-bottom: 0.75rem;
+.hto-lead-time-chip:last-child {
+  border-right: none;
 }
 
-.hto-lead-time-notice {
+.hto-chip-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.hto-chip-detail {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.hto-chip-notice {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
   font-size: 1rem;
-  font-weight: 600;
-  color: rgba(107, 126, 63, 1);
+  color: var(--sage);
+  margin-top: 4px;
 }
 
-/* ── Payment Methods ── */
-
-.hto-payment-methods {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
-}
-
-.hto-payment-card {
-  background-color: white;
-  border: 1px solid rgba(107, 126, 63, 0.2);
-  border-radius: 2px;
-  padding: 1.25rem 1rem;
-  text-align: center;
-}
-
-.hto-payment-name {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c2c2c;
-  margin-bottom: 0.4rem;
-}
-
-.hto-payment-desc {
-  font-size: 0.9rem;
-  color: #5c5c5c;
-  line-height: 1.5;
-}
-
-/* ── CTA ── */
+/* ═══════════════════════════════════════════════
+   CTA
+═══════════════════════════════════════════════ */
 
 .hto-cta {
-  text-align: center;
-  padding: 4rem 1.5rem;
-}
-
-.hto-cta-text {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.5rem;
-  color: #2c2c2c;
-  margin: 0 0 1.25rem 0;
+  display: flex;
+  justify-content: center;
 }
 
 .hto-cta-btn {
   display: inline-block;
-  padding: 0.75rem 2rem;
-  background-color: rgba(107, 126, 63, 1);
-  color: white;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1rem;
-  font-weight: 500;
+  padding: 13px 28px;
+  background: var(--sage);
+  color: var(--warm-white);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   text-decoration: none;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
+  transition: background 0.2s;
 }
 
 .hto-cta-btn:hover {
-  background-color: rgba(90, 106, 53, 1);
+  background: var(--sage-dark);
 }
 
-/* ── Responsive ── */
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
 
-@media (max-width: 700px) {
-  .hto-hero-title {
-    font-size: 2.2rem;
+@media (max-width: 600px) {
+  .hto-main {
+    padding: 48px 6% 56px;
+    align-items: flex-start;
   }
 
   .hto-lead-times {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
-  .hto-payment-methods {
-    grid-template-columns: repeat(2, 1fr);
+  .hto-lead-time-chip {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 12px 16px;
   }
 
-  .hto-step-number {
-    font-size: 2rem;
-    min-width: 2.25rem;
+  .hto-lead-time-chip:last-child {
+    border-bottom: none;
   }
-}
 
-@media (max-width: 420px) {
-  .hto-payment-methods {
-    grid-template-columns: 1fr;
+  .hto-chip-notice {
+    margin-top: 0;
   }
 }
