@@ -1,17 +1,41 @@
+// app/routes/about.tsx
+import { Link } from "react-router";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/about.css";
 import afroditiImage from "../../src/img/afroditi.jpg";
+import featureVid from "../../src/videos/feature_vid.mp4";
+
+export function meta() {
+  return [
+    { title: "About Us | Afroditi's Delicacies" },
+    {
+      name: "description",
+      content:
+        "Learn about Afroditi's Delicacies — homemade Greek cuisine in Seattle.",
+    },
+  ];
+}
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white font-sans flex flex-col">
+    <div className="about-page">
       <Header />
-      <main className="w-full grow">
-        <div className="about-container">
-          <div className="about-content">
-            {/* Left side - Text content */}
-            <div className="about-text">
+      <main className="about-main">
+        {/* ── Top: two-column bio + photo ── */}
+        <div className="about-top">
+          <div className="about-left">
+            <div className="about-eyebrow">
+              <span className="about-eyebrow-line" />
+              Our Story
+            </div>
+
+            <h1 className="about-title">
+              Made with <em>heart</em>,<br />
+              rooted in tradition.
+            </h1>
+
+            <div className="about-body">
               <p>
                 Afroditi's Delicacies is a small Greek homemade catering
                 business built around tradition, heart, and the flavors of the
@@ -20,26 +44,14 @@ export default function About() {
                 business in 2018 after seeing a growing appreciation for
                 authentic Greek food in Washington.
               </p>
-
               <p>
-                Afroditi's goal has always been simple. She wants to bring the
-                familiar tastes of home to the Greek community in the Seattle
-                area while also introducing others to the warmth of traditional
-                Greek cooking. Every recipe she prepares is rooted in the
-                techniques she learned growing up. Everything is made by hand,
-                using organic ingredients and the same slow, thoughtful approach
-                that defines a true Greek kitchen.
+                Her goal has always been simple — to bring the familiar tastes
+                of home to the Greek community in Seattle while introducing
+                others to the warmth of traditional Greek cooking. Every recipe
+                is rooted in the techniques she learned growing up, made by
+                hand, using organic ingredients and the same slow, thoughtful
+                approach that defines a true Greek kitchen.
               </p>
-
-              <p>
-                Over the years, her food has found its way into the routines and
-                celebrations of people all across the region. Orders continue to
-                grow each year, mostly through personal recommendations and the
-                genuine connection customers feel to her cooking. Her presence
-                on social media has helped her reach even more food lovers who
-                appreciate honest, homemade meals.
-              </p>
-
               <p className="about-closing">
                 Afroditi's Delicacies is more than a catering service. It is a
                 taste of tradition, a reminder of home, and a celebration of the
@@ -47,10 +59,17 @@ export default function About() {
               </p>
             </div>
 
-            {/* Right side - Image */}
-            <div className="about-image">
-              <img src={afroditiImage} alt="Afroditi Kritikou" />
-            </div>
+            <Link to="/menu" className="about-cta">
+              Browse the Menu
+            </Link>
+          </div>
+
+          <div className="about-right">
+            <img
+              src={afroditiImage}
+              alt="Afroditi Kritikou"
+              className="about-photo"
+            />
           </div>
         </div>
       </main>

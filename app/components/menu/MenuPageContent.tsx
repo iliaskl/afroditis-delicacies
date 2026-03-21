@@ -154,29 +154,31 @@ export default function MenuPageContent({
 
       {/* ── Main content ── */}
       <div className="menu-main">
-        {Object.entries(groupedItems).map(
-          ([categoryName, { items, hasTwoSizes }]) => (
-            <MenuCategorySection
-              key={categoryName}
-              categoryName={categoryName}
-              items={items}
-              hasTwoSizes={hasTwoSizes}
-              isAdmin={!!isAdmin}
-              draggedItem={draggedItem}
-              dragOverItem={dragOverItem}
-              userFavorites={userFavorites}
-              onEditCategory={editCategory}
-              onDeleteCategory={deleteCategory}
-              onAddDish={addDish}
-              onItemClick={onItemClick}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-            />
-          ),
-        )}
+        <div className="menu-main-inner">
+          {Object.entries(groupedItems).map(
+            ([categoryName, { items, hasTwoSizes }]) => (
+              <MenuCategorySection
+                key={categoryName}
+                categoryName={categoryName}
+                items={items}
+                hasTwoSizes={hasTwoSizes}
+                isAdmin={!!isAdmin}
+                draggedItem={draggedItem}
+                dragOverItem={dragOverItem}
+                userFavorites={userFavorites}
+                onEditCategory={editCategory}
+                onDeleteCategory={deleteCategory}
+                onAddDish={addDish}
+                onItemClick={onItemClick}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                onDragEnd={onDragEnd}
+              />
+            ),
+          )}
+        </div>
       </div>
 
       {/* ── EditMenu popups — untouched ── */}

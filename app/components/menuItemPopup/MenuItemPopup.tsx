@@ -191,12 +191,7 @@ const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
                   isFavorited ? "Remove from favorites" : "Add to favorites"
                 }
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  style={{ marginRight: "6px" }}
-                >
+                <svg viewBox="0 0 24 24" width="18" height="18">
                   <path
                     fill={isFavorited ? "currentColor" : "none"}
                     stroke="currentColor"
