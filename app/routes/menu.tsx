@@ -339,11 +339,15 @@ export default function Menu() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white font-sans flex flex-col">
+      <div
+        className="min-h-screen font-sans flex flex-col"
+        style={{ background: "#ffffff" }}
+      >
         <Header />
-        <main className="menu-container">
-          <div className="menu-header">
-            <h1>Loading Menu...</h1>
+        <main className="menu-page">
+          <div className="menu-sidebar" />
+          <div className="menu-main">
+            <p className="menu-loading-text">Loading menu…</p>
           </div>
         </main>
         <Footer />
@@ -353,12 +357,15 @@ export default function Menu() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white font-sans flex flex-col">
+      <div
+        className="min-h-screen font-sans flex flex-col"
+        style={{ background: "#ffffff" }}
+      >
         <Header />
-        <main className="menu-container">
-          <div className="menu-header">
-            <h1>Our Menu</h1>
-            <p className="error-message">{error}</p>
+        <main className="menu-page">
+          <div className="menu-sidebar" />
+          <div className="menu-main">
+            <p className="menu-error-text">{error}</p>
           </div>
         </main>
         <Footer />
@@ -367,9 +374,12 @@ export default function Menu() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans flex flex-col">
+    <div
+      className="min-h-screen font-sans flex flex-col"
+      style={{ background: "#ffffff" }}
+    >
       <Header />
-      <main className="menu-container">
+      <main className="menu-page">
         <MenuPageContent
           categories={categories}
           menuItems={menuItems}

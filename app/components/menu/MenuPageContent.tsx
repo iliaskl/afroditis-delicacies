@@ -125,49 +125,63 @@ export default function MenuPageContent({
 
   return (
     <>
-      <div className="menu-header">
-        <h1>Our Menu</h1>
-        <p>
-          Authentic Greek cuisine made with traditional recipes and the finest
-          ingredients
-        </p>
+      {/* ── Sidebar ── */}
+      <aside className="menu-sidebar">
+        <MenuFilters
+          categories={categories}
+          selectedCategory={selectedCategory}
+          isAdmin={isAdmin}
+          onSelectCategory={onSelectCategory}
+          onOpenAddCategory={openAddCategory}
+        />
+
+        <div className="menu-leadtime-card">
+          <p className="menu-leadtime-eyebrow">Order lead times</p>
+          <div className="menu-leadtime-row">
+            <span className="menu-leadtime-label">1–3 items</span>
+            <span className="menu-leadtime-value">1 day</span>
+          </div>
+          <div className="menu-leadtime-row">
+            <span className="menu-leadtime-label">4–7 items</span>
+            <span className="menu-leadtime-value">3 days</span>
+          </div>
+          <div className="menu-leadtime-row">
+            <span className="menu-leadtime-label">Catering (8+)</span>
+            <span className="menu-leadtime-value">7 days</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main content ── */}
+      <div className="menu-main">
+        <div className="menu-main-inner">
+          {Object.entries(groupedItems).map(
+            ([categoryName, { items, hasTwoSizes }]) => (
+              <MenuCategorySection
+                key={categoryName}
+                categoryName={categoryName}
+                items={items}
+                hasTwoSizes={hasTwoSizes}
+                isAdmin={!!isAdmin}
+                draggedItem={draggedItem}
+                dragOverItem={dragOverItem}
+                userFavorites={userFavorites}
+                onEditCategory={editCategory}
+                onDeleteCategory={deleteCategory}
+                onAddDish={addDish}
+                onItemClick={onItemClick}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                onDragEnd={onDragEnd}
+              />
+            ),
+          )}
+        </div>
       </div>
 
-      <MenuFilters
-        categories={categories}
-        selectedCategory={selectedCategory}
-        isAdmin={!!isAdmin}
-        onSelectCategory={onSelectCategory}
-        onOpenAddCategory={openAddCategory}
-      />
-
-      <div className="menu-content">
-        {Object.entries(groupedItems).map(
-          ([categoryName, { items, hasTwoSizes }]) => (
-            <MenuCategorySection
-              key={categoryName}
-              categoryName={categoryName}
-              items={items}
-              hasTwoSizes={hasTwoSizes}
-              isAdmin={!!isAdmin}
-              draggedItem={draggedItem}
-              dragOverItem={dragOverItem}
-              userFavorites={userFavorites}
-              onEditCategory={editCategory}
-              onDeleteCategory={deleteCategory}
-              onAddDish={addDish}
-              onItemClick={onItemClick}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-            />
-          ),
-        )}
-      </div>
-
-      {/* ── EditMenu popups ── */}
+      {/* ── EditMenu popups — untouched ── */}
       {categoryBeingEdited && (
         <>
           <div className="edit-overlay" onClick={closeAll} />
@@ -296,7 +310,7 @@ export default function MenuPageContent({
               </label>
             </div>
             <div className="form-group">
-              <label>Dish Image: (placeholder)</label>
+              <label>Dish Image:</label>
               <div className="image-upload-section">
                 <input
                   type="file"
@@ -398,7 +412,7 @@ export default function MenuPageContent({
               </label>
             </div>
             <div className="form-group">
-              <label>Dish Image: (placeholder)</label>
+              <label>Dish Image:</label>
               <div className="image-upload-section">
                 <input
                   type="file"

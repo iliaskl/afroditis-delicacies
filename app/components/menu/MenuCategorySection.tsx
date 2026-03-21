@@ -37,8 +37,12 @@ export default function MenuCategorySection({
   onDrop,
   onDragEnd,
 }: MenuCategorySectionProps) {
+  const hasTwoPrices =
+    hasTwoSizes || items.some((i) => i.secondPrice && i.secondPrice > 0);
+
   return (
     <div className="menu-category">
+      {/* ── Category header: title → admin icons → rule → size labels ── */}
       <div className="category-header-row">
         <h2 className="category-title">{categoryName}</h2>
 
@@ -94,24 +98,35 @@ export default function MenuCategorySection({
           </div>
         )}
 
-        {(hasTwoSizes ||
-          items.some((i) => i.secondPrice && i.secondPrice > 0)) && (
-          <div className="size-headers">
-            <span className="size-header">Small / Large</span>
+        <div className="category-header-rule" />
+
+        {hasTwoPrices ? (
+          <div className="category-size-headers">
+            <span className="category-size-col">Small</span>
+            {/* <span className="category-size-sep">/</span> */}
+            <span className="category-size-col">Large</span>
           </div>
+        ) : (
+          <div className="category-size-placeholder" />
         )}
       </div>
 
+      {/* ── Dish list ── */}
       <div className="menu-items">
         {items.length > 0
           ? items.map((item) => (
               <div
                 key={item.id}
-                className={`menu-item ${!item.available ? "unavailable" : ""} ${
-                  isAdmin || item.available ? "clickable" : ""
-                } ${isAdmin ? "admin-view" : ""} ${
-                  draggedItem?.id === item.id ? "dragging" : ""
-                } ${dragOverItem?.id === item.id ? "drag-over" : ""}`}
+                className={[
+                  "menu-item",
+                  !item.available ? "unavailable" : "",
+                  isAdmin || item.available ? "clickable" : "",
+                  isAdmin ? "admin-view" : "",
+                  draggedItem?.id === item.id ? "dragging" : "",
+                  dragOverItem?.id === item.id ? "drag-over" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 draggable={!!isAdmin}
                 onDragStart={(e) => isAdmin && onDragStart(e, item)}
                 onDragOver={(e) => isAdmin && onDragOver(e, item)}
@@ -150,20 +165,22 @@ export default function MenuCategorySection({
                     </svg>
                   </div>
                 )}
+
                 <div className="item-content">
                   <p className="item-name">{item.name}</p>
                   {!item.available && isAdmin && (
                     <span className="unavailable-badge">unavailable</span>
                   )}
                 </div>
+
                 <div className="item-pricing">
                   {item.secondPrice && item.secondPrice > 0 ? (
                     <div className="pies-pricing">
                       <span className="price price-column">
-                        ${item.price.toFixed(2)}
+                        ${item.secondPrice.toFixed(2)}
                       </span>
                       <span className="price price-column">
-                        ${item.secondPrice.toFixed(2)}
+                        ${item.price.toFixed(2)}
                       </span>
                     </div>
                   ) : (
