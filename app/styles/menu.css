@@ -138,7 +138,7 @@
   margin: 24px 16px 0;
   background: var(--warm-white);
   border: 1px solid var(--border-sage);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 14px 16px;
 }
 
@@ -271,7 +271,7 @@
 .admin-icon-btn {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,14 +313,14 @@
 }
 
 .admin-icon-btn.add-btn {
-  color: #6b8cae;
-  border: 1px solid rgba(107, 140, 174, 0.35);
+  color: var(--sage);
+  border: 1px solid var(--border-sage);
 }
 
 .admin-icon-btn.add-btn:hover {
-  background: rgba(107, 140, 174, 0.1);
-  color: #4a7299;
-  border-color: rgba(107, 140, 174, 0.55);
+  background: var(--sage-tint);
+  color: var(--sage-dark);
+  border-color: var(--sage);
   transform: translateY(-1px);
 }
 
@@ -768,7 +768,7 @@
 }
 
 .delete-button:hover:not(:disabled) {
-  background: #b14139;
+  background: #9a3530;
   transform: translateY(-1px);
 }
 
