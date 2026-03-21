@@ -139,15 +139,15 @@ export default function MenuPageContent({
           <p className="menu-leadtime-eyebrow">Order lead times</p>
           <div className="menu-leadtime-row">
             <span className="menu-leadtime-label">1–3 items</span>
-            <span className="menu-leadtime-value">1 day</span>
-          </div>
-          <div className="menu-leadtime-row">
-            <span className="menu-leadtime-label">4–7 items</span>
             <span className="menu-leadtime-value">3 days</span>
           </div>
           <div className="menu-leadtime-row">
+            <span className="menu-leadtime-label">4–7 items</span>
+            <span className="menu-leadtime-value">1 week</span>
+          </div>
+          <div className="menu-leadtime-row">
             <span className="menu-leadtime-label">Catering (8+)</span>
-            <span className="menu-leadtime-value">7 days</span>
+            <span className="menu-leadtime-value">3 weeks</span>
           </div>
         </div>
       </aside>

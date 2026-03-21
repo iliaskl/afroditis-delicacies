@@ -24,15 +24,15 @@ const LEAD_TIME_NOTE: Record<string, string> = {
 };
 
 function getLeadTimeNote(totalItems: number): string {
-  if (totalItems >= 7) return LEAD_TIME_NOTE.large;
+  if (totalItems >= 8) return LEAD_TIME_NOTE.large;
   if (totalItems >= 4) return LEAD_TIME_NOTE.medium;
   return LEAD_TIME_NOTE.small;
 }
 
 function getLeadTimeHours(totalItems: number): number {
-  if (totalItems >= 7) return 120;
-  if (totalItems >= 4) return 72;
-  return 24;
+  if (totalItems >= 8) return 336;
+  if (totalItems >= 4) return 168;
+  return 72;
 }
 
 export function getEarliestDeliveryDate(totalItems: number): Date {
