@@ -220,7 +220,7 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                       </div>
                       {item.specialInstructions && (
                         <p className="order-detail-item-note">
-                          📝 {item.specialInstructions}
+                          {item.specialInstructions}
                         </p>
                       )}
                     </div>
