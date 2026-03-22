@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
+import logo from "../../src/img/logos/logo_t.png";
 import { useAuth } from "../context/authContext/authContext";
 import { useUserProfile } from "../context/userContext/userProfile";
 import { useCart } from "../context/cartContext/cartContext";
@@ -429,15 +430,10 @@ export default function Checkout() {
         <main className="checkout-success-page">
           <div className="checkout-success-box">
             <div className="success-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
+              <img
+                src={logo}
+                alt="Afroditi's Logo"
+              />
             </div>
             <h1>Thank You for Your Order!</h1>
             <p>
