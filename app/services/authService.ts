@@ -111,10 +111,7 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       MAX_LENGTHS.name,
     );
 
-    const userProfileData: Omit<UserProfile, "createdAt" | "updatedAt"> & {
-      createdAt: Timestamp;
-      updatedAt: Timestamp;
-    } = {
+    const userProfileData = {
       uid: user.uid,
       email: sanitizeText(formData.email, MAX_LENGTHS.email),
       firstName: sanitizedFirst,
@@ -123,7 +120,6 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       phoneNumber: sanitizeText(formData.phoneNumber || "", MAX_LENGTHS.phone),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-      role: "customer",
     };
 
     await setDoc(doc(db, "users", user.uid), userProfileData);
@@ -145,10 +141,7 @@ export async function signInWithGoogle(): Promise<User> {
 
     if (!userDoc.exists()) {
       const names = user.displayName?.split(" ") || ["", ""];
-      const userProfileData: Omit<UserProfile, "createdAt" | "updatedAt"> & {
-        createdAt: Timestamp;
-        updatedAt: Timestamp;
-      } = {
+      const userProfileData = {
         uid: user.uid,
         email: user.email || "",
         firstName: names[0] || "",
@@ -156,7 +149,6 @@ export async function signInWithGoogle(): Promise<User> {
         displayName: user.displayName || "",
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        role: "customer",
       };
       await setDoc(doc(db, "users", user.uid), userProfileData);
     } else {
