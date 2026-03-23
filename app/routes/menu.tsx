@@ -13,6 +13,7 @@ import {
   updateDish as updateDishService,
   deleteDish as deleteDishService,
   reorderDishes as reorderDishesService,
+  reorderCategories as reorderCategoriesService,
   uploadDishImage,
 } from "../services/menuService";
 import { useEditMenu } from "../components/editMenu/editMenu";
@@ -33,6 +34,8 @@ export default function Menu() {
   const [error, setError] = useState<string | null>(null);
   const [draggedItem, setDraggedItem] = useState<MenuItem | null>(null);
   const [dragOverItem, setDragOverItem] = useState<MenuItem | null>(null);
+  const [draggedCategory, setDraggedCategory] = useState<string | null>(null);
+  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedCategoryHasTwoSizes, setSelectedCategoryHasTwoSizes] =
     useState(false);
@@ -211,7 +214,8 @@ export default function Menu() {
     try {
       setIsSubmitting(true);
       let imgPath = dishBeingEdited.imgPath;
-      if (dishImage) imgPath = await uploadDishImage(dishImage);
+      if (editMenuProps.clearDishImage && !dishImage) imgPath = "";
+      else if (dishImage) imgPath = await uploadDishImage(dishImage);
       await updateDishService(dishBeingEdited.id, {
         name: dishName.trim(),
         price,
@@ -337,6 +341,33 @@ export default function Menu() {
     setDragOverItem(null);
   };
 
+  const handleCategoryDrop = async (
+    draggedName: string,
+    targetName: string,
+  ) => {
+    if (draggedName === targetName) return;
+
+    const sorted = [...categories].sort((a, b) => a.order - b.order);
+    const draggedIndex = sorted.findIndex((c) => c.name === draggedName);
+    const targetIndex = sorted.findIndex((c) => c.name === targetName);
+
+    const reordered = [...sorted];
+    const [removed] = reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, removed);
+
+    // optimistic update
+    setCategories(reordered.map((c, i) => ({ ...c, order: i + 1 })));
+
+    try {
+      await reorderCategoriesService(
+        reordered.map((c, i) => ({ id: c.id, order: i + 1 })),
+      );
+    } catch {
+      alert("Failed to reorder categories. Please try again.");
+      await refreshMenu();
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -403,6 +434,15 @@ export default function Menu() {
           handleDeleteDish={handleDeleteDish}
           handleAddCategory={handleAddCategory}
           handleImageSelect={handleImageSelect}
+          draggedCategory={draggedCategory}
+          dragOverCategory={dragOverCategory}
+          onCategoryDrop={handleCategoryDrop}
+          onCategoryDragStart={setDraggedCategory}
+          onCategoryDragOver={setDragOverCategory}
+          onCategoryDragEnd={() => {
+            setDraggedCategory(null);
+            setDragOverCategory(null);
+          }}
         />
       </main>
       {selectedItem && (

@@ -130,6 +130,36 @@
   background: var(--sage-tint);
 }
 
+.cat-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  color: var(--sage);
+  opacity: 0;
+  transition: opacity 0.18s;
+  flex-shrink: 0;
+  cursor: grab;
+}
+
+.cat-drag-handle:active {
+  cursor: grabbing;
+}
+
+.menu-sidebar-btn:hover .cat-drag-handle {
+  opacity: 0.5;
+}
+
+.menu-sidebar-btn.cat-dragging {
+  opacity: 0.4;
+}
+
+.menu-sidebar-btn.cat-drag-over {
+  border-top: 2px solid var(--sage);
+}
+
 /* ═══════════════════════════════════════════════
    SIDEBAR — lead time info card
 ═══════════════════════════════════════════════ */
@@ -699,16 +729,87 @@
 }
 
 .image-preview {
-  width: 120px;
-  height: 120px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
   border: 1px solid var(--border);
 }
 
 .image-preview img {
-  width: 100%;
-  height: 100%;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
+  display: block;
+}
+
+.image-remove-btn {
+  display: block;
+  margin-top: 8px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--badge-red);
+  color: var(--badge-red);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition:
+    background 0.18s,
+    color 0.18s;
+}
+
+.image-remove-btn:hover:not(:disabled) {
+  background: var(--badge-red);
+  color: white;
+}
+
+.image-remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.image-remove-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.image-undo-btn {
+  background: transparent;
+  border: 1px solid var(--border-med);
+  color: var(--ink);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 2px;
+  transition:
+    border-color 0.18s,
+    color 0.18s;
+  white-space: nowrap;
+}
+
+.image-undo-btn:hover:not(:disabled) {
+  border-color: var(--border-sage);
+  color: var(--sage);
+}
+
+.image-undo-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .confirmation-text {
@@ -731,7 +832,7 @@
   margin-top: 2.5rem;
 }
 
-.edit-menu-popup button {
+.edit-menu-popup button:not(.image-remove-btn):not(.image-undo-btn) {
   flex: 1;
   padding: 14px 20px;
   border: none;

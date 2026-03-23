@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useCart } from "../../context/cartContext/cartContext";
+import { getMenuData } from "../../services/menuService";
 import "../../styles/cartPopup.css";
 
 interface CartPopupProps {
@@ -19,7 +20,34 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
   } = useCart();
   const navigate = useNavigate();
 
-  if (!isOpen) return null;
+  const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
+  const [availabilityChecked, setAvailabilityChecked] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setUnavailableIds(new Set());
+      setAvailabilityChecked(false);
+      return;
+    }
+    if (cartItems.length === 0) {
+      setAvailabilityChecked(true);
+      return;
+    }
+    getMenuData()
+      .then(({ items }) => {
+        const unavailable = new Set<string>();
+        cartItems.forEach((cartItem) => {
+          const menuItem = items.find((i) => i.id === cartItem.menuItemId);
+          if (menuItem && !menuItem.available)
+            unavailable.add(cartItem.menuItemId);
+        });
+        setUnavailableIds(unavailable);
+      })
+      .catch((err) => console.error("Failed to check availability:", err))
+      .finally(() => setAvailabilityChecked(true));
+  }, [isOpen, cartItems]);
+
+  const hasUnavailable = unavailableIds.size > 0;
 
   const handleUpdateQuantity = async (
     itemId: string,
@@ -62,6 +90,8 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
     navigate("/checkout");
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="cart-overlay" onClick={onClose}>
       <div className="cart-popup" onClick={(e) => e.stopPropagation()}>
@@ -87,7 +117,7 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
         </div>
 
         <div className="cart-content">
-          {loading ? (
+          {loading || !availabilityChecked ? (
             <div className="cart-loading">
               <svg className="spinner" viewBox="0 0 50 50">
                 <circle
@@ -138,113 +168,131 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
                 Clear Cart
               </button>
 
+              {hasUnavailable && (
+                <div className="cart-unavailable-notice">
+                  Some items are no longer available. Please remove them to
+                  proceed to checkout.
+                </div>
+              )}
+
               <div className="cart-items">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="cart-item">
-                    <div className="cart-item-image">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.dishName} />
-                      ) : (
-                        <div className="cart-item-image-placeholder">
-                          <svg
-                            viewBox="0 0 24 24"
-                            width="32"
-                            height="32"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          >
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="cart-item-details">
-                      <h3 className="cart-item-name">{item.dishName}</h3>
-                      <p className="cart-item-category">{item.category}</p>
-
-                      {item.specialInstructions && (
-                        <p className="cart-item-instructions">
-                          <strong>Note:</strong> {item.specialInstructions}
-                        </p>
-                      )}
-
-                      <div className="cart-item-sizes">
-                        {item.quantities.map((qty) => (
-                          <div key={qty.size} className="cart-item-size-row">
-                            <span className="size-label-cart">
-                              {qty.size.charAt(0).toUpperCase() +
-                                qty.size.slice(1)}{" "}
-                              — ${qty.price.toFixed(2)}
-                            </span>
-
-                            <div className="cart-quantity-controls">
-                              <button
-                                className="cart-qty-btn minus"
-                                onClick={() =>
-                                  handleUpdateQuantity(
-                                    item.id,
-                                    qty.size,
-                                    qty.quantity - 1,
-                                  )
-                                }
-                                disabled={loading}
-                                aria-label="Decrease quantity"
-                              >
-                                −
-                              </button>
-                              <span className="cart-qty-display">
-                                {qty.quantity}
-                              </span>
-                              <button
-                                className="cart-qty-btn plus"
-                                onClick={() =>
-                                  handleUpdateQuantity(
-                                    item.id,
-                                    qty.size,
-                                    qty.quantity + 1,
-                                  )
-                                }
-                                disabled={loading}
-                                aria-label="Increase quantity"
-                              >
-                                +
-                              </button>
-                            </div>
-
-                            <span className="cart-item-subtotal">
-                              ${(qty.price * qty.quantity).toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      className="cart-item-remove"
-                      onClick={() => handleRemoveItem(item.id)}
-                      disabled={loading}
-                      aria-label="Remove item"
+                {cartItems.map((item) => {
+                  const isUnavailable = unavailableIds.has(item.menuItemId);
+                  return (
+                    <div
+                      key={item.id}
+                      className={`cart-item${isUnavailable ? " cart-item-unavailable" : ""}`}
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="none"
+                      <div className="cart-item-image">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.dishName} />
+                        ) : (
+                          <div className="cart-item-image-placeholder">
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="32"
+                              height="32"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            >
+                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="cart-item-details">
+                        <h3 className="cart-item-name">{item.dishName}</h3>
+                        {isUnavailable && (
+                          <span className="cart-item-unavailable-badge">
+                            No longer available
+                          </span>
+                        )}
+                        <p className="cart-item-category">{item.category}</p>
+
+                        {item.specialInstructions && (
+                          <p className="cart-item-instructions">
+                            <strong>Note:</strong> {item.specialInstructions}
+                          </p>
+                        )}
+
+                        <div className="cart-item-sizes">
+                          {item.quantities.map((qty) => (
+                            <div key={qty.size} className="cart-item-size-row">
+                              <span className="size-label-cart">
+                                {qty.size.charAt(0).toUpperCase() +
+                                  qty.size.slice(1)}{" "}
+                                — ${qty.price.toFixed(2)}
+                              </span>
+
+                              <div className="cart-quantity-controls">
+                                <button
+                                  className="cart-qty-btn minus"
+                                  onClick={() =>
+                                    handleUpdateQuantity(
+                                      item.id,
+                                      qty.size,
+                                      qty.quantity - 1,
+                                    )
+                                  }
+                                  disabled={loading}
+                                  aria-label="Decrease quantity"
+                                >
+                                  −
+                                </button>
+                                <span className="cart-qty-display">
+                                  {qty.quantity}
+                                </span>
+                                <button
+                                  className="cart-qty-btn plus"
+                                  onClick={() =>
+                                    handleUpdateQuantity(
+                                      item.id,
+                                      qty.size,
+                                      qty.quantity + 1,
+                                    )
+                                  }
+                                  disabled={loading}
+                                  aria-label="Increase quantity"
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              <span className="cart-item-subtotal">
+                                ${(qty.price * qty.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        className="cart-item-remove"
+                        onClick={() => handleRemoveItem(item.id)}
+                        disabled={loading}
+                        aria-label="Remove item"
                       >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        <line x1="10" y1="11" x2="10" y2="17" />
-                        <line x1="14" y1="11" x2="14" y2="17" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          fill="none"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -264,19 +312,23 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
             <button
               className="checkout-btn"
               onClick={handleProceedToCheckout}
-              disabled={loading}
+              disabled={loading || hasUnavailable}
             >
-              Proceed to Checkout
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              {hasUnavailable
+                ? "Remove unavailable items to continue"
+                : "Proceed to Checkout"}
+              {!hasUnavailable && (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              )}
             </button>
           </div>
         )}

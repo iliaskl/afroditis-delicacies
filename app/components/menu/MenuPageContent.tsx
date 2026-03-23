@@ -3,7 +3,6 @@ import type { MenuItem, MenuCategory } from "../../types/types";
 import MenuFilters from "./MenuFilters";
 import MenuCategorySection from "./MenuCategorySection";
 import { useEditMenu } from "../editMenu/editMenu";
-
 interface MenuPageContentProps {
   categories: MenuCategory[];
   menuItems: MenuItem[];
@@ -27,6 +26,12 @@ interface MenuPageContentProps {
   handleDeleteDish: () => void;
   handleAddCategory: () => void;
   handleImageSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  draggedCategory: string | null;
+  dragOverCategory: string | null;
+  onCategoryDrop: (draggedName: string, targetName: string) => void;
+  onCategoryDragStart: (name: string) => void;
+  onCategoryDragOver: (name: string) => void;
+  onCategoryDragEnd: () => void;
 }
 
 export default function MenuPageContent({
@@ -45,6 +50,12 @@ export default function MenuPageContent({
   onDragLeave,
   onDrop,
   onDragEnd,
+  draggedCategory,
+  dragOverCategory,
+  onCategoryDrop,
+  onCategoryDragStart,
+  onCategoryDragOver,
+  onCategoryDragEnd,
   handleSaveCategoryName,
   handleDeleteCategory,
   handleAddDish,
@@ -71,6 +82,10 @@ export default function MenuPageContent({
     dishAvailable,
     setDishAvailable,
     dishImagePreview,
+    clearDishImage,
+    setClearDishImage,
+    setDishImagePreview,
+    setDishImage,
     newCategoryNameInput,
     setNewCategoryNameInput,
     newCategoryHasTwoSizes,
@@ -133,6 +148,12 @@ export default function MenuPageContent({
           isAdmin={isAdmin}
           onSelectCategory={onSelectCategory}
           onOpenAddCategory={openAddCategory}
+          draggedCategory={draggedCategory}
+          dragOverCategory={dragOverCategory}
+          onCategoryDrop={onCategoryDrop}
+          onCategoryDragStart={onCategoryDragStart}
+          onCategoryDragOver={onCategoryDragOver}
+          onCategoryDragEnd={onCategoryDragEnd}
         />
 
         <div className="menu-leadtime-card">
@@ -181,7 +202,7 @@ export default function MenuPageContent({
         </div>
       </div>
 
-      {/* ── EditMenu popups — untouched ── */}
+      {/* ── EditMenu popups ── */}
       {categoryBeingEdited && (
         <>
           <div className="edit-overlay" onClick={closeAll} />
@@ -438,11 +459,38 @@ export default function MenuPageContent({
                   </svg>
                   Choose Image
                 </label>
-                {dishImagePreview && (
+                {clearDishImage ? (
+                  <div className="image-remove-notice">
+                    <span>Image will be removed on save.</span>
+                    <button
+                      type="button"
+                      className="image-undo-btn"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        setDishImagePreview(dishBeingEdited.imgPath || "");
+                        setClearDishImage(false);
+                      }}
+                    >
+                      Undo
+                    </button>
+                  </div>
+                ) : dishImagePreview ? (
                   <div className="image-preview">
                     <img src={dishImagePreview} alt="Preview" />
+                    <button
+                      type="button"
+                      className="image-remove-btn"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        setDishImagePreview("");
+                        setDishImage(null);
+                        setClearDishImage(true);
+                      }}
+                    >
+                      Remove Image
+                    </button>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
             <div className="popup-buttons">
