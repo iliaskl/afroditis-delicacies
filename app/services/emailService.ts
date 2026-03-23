@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import type { Order } from "../types/types";
 
@@ -318,25 +318,25 @@ class EmailService {
         </div>
       `;
 
-      const adminsSnap = await getDocs(
-        query(collection(db, "users"), where("role", "==", "admin")),
-      );
-
-      if (adminsSnap.empty) {
-        console.warn("No admin users found in Firestore.");
+      const configSnap = await getDoc(doc(db, "adminSettings", "config"));
+      if (!configSnap.exists()) {
+        console.error("adminSettings/config document not found.");
         return;
       }
 
-      for (const adminDoc of adminsSnap.docs) {
-        const adminEmail = adminDoc.data().email;
-        if (adminEmail) {
-          await this.sendEmail({
-            to: adminEmail,
-            subject: `New Order — ${order.orderCode} from ${order.customerName} | Afroditi's Delicacies`,
-            body: emailWrapper(content),
-            type: "new_order_admin",
-          });
-        }
+      const adminEmails: string[] = configSnap.data().adminEmails ?? [];
+      if (adminEmails.length === 0) {
+        console.error("adminEmails array is empty in adminSettings/config.");
+        return;
+      }
+
+      for (const adminEmail of adminEmails) {
+        await this.sendEmail({
+          to: adminEmail,
+          subject: `New Order — ${order.orderCode} from ${order.customerName} | Afroditi's Delicacies`,
+          body: emailWrapper(content),
+          type: "new_order_admin",
+        });
       }
     } catch (error) {
       console.error("Error sending admin order notification:", error);
