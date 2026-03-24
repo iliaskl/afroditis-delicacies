@@ -287,6 +287,34 @@
 
 /* ── Quantity Controls ───────────────────────────────────────────────────── */
 
+.cart-unavailable-notice {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fdf2f2;
+  border: 1px solid rgba(199, 81, 70, 0.28);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.78rem;
+  color: var(--badge-red);
+  line-height: 1.5;
+}
+
+.cart-item-unavailable {
+  opacity: 0.5;
+  border-left: 3px solid var(--badge-red);
+  padding-left: 10px;
+}
+
+.cart-item-unavailable-badge {
+  display: inline-block;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--badge-red);
+  margin-bottom: 4px;
+}
+
 .cart-quantity-controls {
   display: flex;
   align-items: center;

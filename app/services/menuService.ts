@@ -243,3 +243,18 @@ export async function reorderDishes(
     throw new Error("Failed to reorder dishes");
   }
 }
+
+export async function reorderCategories(
+  categoryUpdates: Array<{ id: string; order: number }>,
+): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+    categoryUpdates.forEach(({ id, order }) => {
+      batch.update(doc(db, "categories", id), { order });
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error("Error reordering categories:", error);
+    throw new Error("Failed to reorder categories");
+  }
+}

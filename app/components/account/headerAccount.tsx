@@ -85,8 +85,8 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
     setFavoritesLoading(true);
     Promise.all([getUserFavorites(user.uid), getMenuData()])
       .then(([favIds, menuData]) => {
-        const favItems = menuData.items.filter((item) =>
-          favIds.includes(item.id),
+        const favItems = menuData.items.filter(
+          (item) => favIds.includes(item.id) && item.available,
         );
         setFavoriteItems(favItems);
         const map: Record<string, boolean> = {};

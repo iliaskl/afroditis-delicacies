@@ -25,6 +25,7 @@ export function useEditMenu() {
   const [dishAvailable, setDishAvailable] = useState(true);
   const [dishImage, setDishImage] = useState<File | null>(null);
   const [dishImagePreview, setDishImagePreview] = useState("");
+  const [clearDishImage, setClearDishImage] = useState(false);
 
   const [newCategoryNameInput, setNewCategoryNameInput] = useState("");
   const [newCategoryHasTwoSizes, setNewCategoryHasTwoSizes] = useState(false);
@@ -58,6 +59,7 @@ export function useEditMenu() {
     setDishAvailable(dish.available ?? true);
     setDishImage(null);
     setDishImagePreview(dish.imgPath || "");
+    setClearDishImage(false);
   }
 
   function deleteDishConfirm(dish: MenuItem) {
@@ -84,6 +86,7 @@ export function useEditMenu() {
     setDishAvailable(true);
     setDishImage(null);
     setDishImagePreview("");
+    setClearDishImage(false);
     setNewCategoryNameInput("");
     setNewCategoryHasTwoSizes(false);
     setIsSubmitting(false);
@@ -110,6 +113,8 @@ export function useEditMenu() {
     setDishImage,
     dishImagePreview,
     setDishImagePreview,
+    clearDishImage,
+    setClearDishImage,
     newCategoryNameInput,
     setNewCategoryNameInput,
     newCategoryHasTwoSizes,

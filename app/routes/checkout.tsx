@@ -15,6 +15,7 @@ import {
   dateKey,
   getRecentOrderCountForUser,
 } from "../services/orderService";
+import { getMenuData } from "../services/menuService";
 import { emailService } from "../services/emailService";
 import type { AddressDetails } from "../services/addressService";
 import type { OrderItem, PaymentMethod } from "../types/types";
@@ -305,6 +306,25 @@ export default function Checkout() {
   const handleSubmit = async () => {
     setSubmitError(null);
 
+    // Hard block if any cart item is now unavailable
+    try {
+      const { items: menuItems } = await getMenuData();
+      const unavailable = cartItems.filter((cartItem) => {
+        const menuItem = menuItems.find((i) => i.id === cartItem.menuItemId);
+        return menuItem && !menuItem.available;
+      });
+      if (unavailable.length > 0) {
+        const names = unavailable.map((i) => i.dishName).join(", ");
+        setSubmitError(
+          `The following items are no longer available and must be removed from your cart before placing your order: ${names}.`,
+        );
+        return;
+      }
+    } catch {
+      setSubmitError("Could not verify item availability. Please try again.");
+      return;
+    }
+
     if (!firstName.trim() || !lastName.trim()) {
       setSubmitError("Please enter your full name.");
       return;
@@ -430,10 +450,7 @@ export default function Checkout() {
         <main className="checkout-success-page">
           <div className="checkout-success-box">
             <div className="success-icon">
-              <img
-                src={logo}
-                alt="Afroditi's Logo"
-              />
+              <img src={logo} alt="Afroditi's Logo" />
             </div>
             <h1>Thank You for Your Order!</h1>
             <p>
