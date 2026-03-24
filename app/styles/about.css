@@ -23,7 +23,7 @@
 
 .about-top {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 0.7fr;
   flex: 1;
   min-height: calc(100vh - 100px - 60px);
 }
@@ -90,7 +90,7 @@
 
 .about-body p {
   font-family: "Outfit", sans-serif;
-  font-size: 0.84rem;
+  font-size: 1rem;
   font-weight: 300;
   color: var(--ink-mid);
   line-height: 1.8;

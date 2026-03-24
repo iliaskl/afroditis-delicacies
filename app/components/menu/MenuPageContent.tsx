@@ -284,7 +284,7 @@ export default function MenuPageContent({
                 />
               </div>
               <div className="form-group">
-                <label>Large Price: (optional)</label>
+                <label>Small Price: (optional)</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -387,7 +387,7 @@ export default function MenuPageContent({
                 />
               </div>
               <div className="form-group">
-                <label>Large Price: (optional)</label>
+                <label>Small Price: (optional)</label>
                 <input
                   type="number"
                   min="0"

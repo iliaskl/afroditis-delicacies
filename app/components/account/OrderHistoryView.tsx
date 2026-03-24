@@ -166,7 +166,7 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                   </span>
                 </div>
                 <div className="order-detail-row">
-                  <span className="order-detail-label">Delivery</span>
+                  <span className="order-detail-label">Delivery Time</span>
                   <span className="order-detail-value">
                     {new Date(expandedOrder.deliveryDate).toLocaleDateString(
                       "en-US",
@@ -180,12 +180,10 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                     at {expandedOrder.deliveryTime}
                   </span>
                 </div>
-              </div>
-
-              <div className="order-detail-section">
-                <h4 className="order-detail-section-title">Delivery Address</h4>
-                <p className="order-detail-address">
-                  {expandedOrder.deliveryAddress.fullAddress ||
+                <div className="order-detail-row">
+                  <span className="order-detail-label">Address</span>
+                  <span className="order-detail-value">
+                    {expandedOrder.deliveryAddress.fullAddress ||
                     [
                       expandedOrder.deliveryAddress.street,
                       expandedOrder.deliveryAddress.city,
@@ -194,7 +192,15 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                     ]
                       .filter(Boolean)
                       .join(", ")}
-                </p>
+                  </span>
+                </div>
+                <div className="order-detail-row">
+                  <span className="order-detail-label">Payment Method</span>
+                  <span className="order-detail-value">
+                    {PAYMENT_METHOD_LABEL[expandedOrder.paymentMethod] ??
+                      expandedOrder.paymentMethod}
+                  </span>
+                </div>
               </div>
 
               <div className="order-detail-section">
@@ -226,18 +232,7 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="order-detail-section">
-                <h4 className="order-detail-section-title">Payment</h4>
-                <div className="order-detail-row">
-                  <span className="order-detail-label">Method</span>
-                  <span className="order-detail-value">
-                    {PAYMENT_METHOD_LABEL[expandedOrder.paymentMethod] ??
-                      expandedOrder.paymentMethod}
-                  </span>
-                </div>
-              </div>
+              </div>          
 
               <div className="order-detail-total-row">
                 <span className="order-detail-total-label">Order Total</span>
