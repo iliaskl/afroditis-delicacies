@@ -90,9 +90,9 @@
 
 .hto-step-number {
   font-family: "Playfair Display", serif;
-  font-size: 1rem;
+  font-size: 1.4rem;
   font-weight: 400;
-  color: rgba(107, 126, 63, 0.3);
+  color: black;
   line-height: 1.6;
   flex-shrink: 0;
   width: 28px;
@@ -197,21 +197,27 @@
 }
 
 .hto-cta-btn {
-  display: inline-block;
-  padding: 13px 28px;
   background: var(--sage);
   color: var(--warm-white);
+  border: none;
+  padding: 16px 36px;
   font-family: "Outfit", sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 400;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.22s,
+    transform 0.15s;
+  border-radius: 0;
   text-decoration: none;
-  transition: background 0.2s;
 }
 
 .hto-cta-btn:hover {
   background: var(--sage-dark);
+  color: var(--warm-white);
+  transform: translateY(-1px);
 }
 
 /* ═══════════════════════════════════════════════

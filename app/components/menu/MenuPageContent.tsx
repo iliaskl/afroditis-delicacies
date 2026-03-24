@@ -168,7 +168,7 @@ export default function MenuPageContent({
           </div>
           <div className="menu-leadtime-row">
             <span className="menu-leadtime-label">Catering (8+)</span>
-            <span className="menu-leadtime-value">3 weeks</span>
+            <span className="menu-leadtime-value">2 weeks</span>
           </div>
         </div>
       </aside>
@@ -305,7 +305,7 @@ export default function MenuPageContent({
                 />
               </div>
               <div className="form-group">
-                <label>Large Price: (optional)</label>
+                <label>Small Price: (optional)</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -408,7 +408,7 @@ export default function MenuPageContent({
                 />
               </div>
               <div className="form-group">
-                <label>Large Price: (optional)</label>
+                <label>Small Price: (optional)</label>
                 <input
                   type="number"
                   min="0"

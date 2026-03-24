@@ -18,9 +18,9 @@ const MONTH_NAMES = [
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const LEAD_TIME_NOTE: Record<string, string> = {
-  small: "Minimum 24 hours notice required.",
-  medium: "Minimum 72 hours notice required.",
-  large: "Minimum 5 days notice required.",
+  small: "Minimum 3 days notice required.",
+  medium: "Minimum 1 week notice required.",
+  large: "Minimum 2 weeks notice required.",
 };
 
 function getLeadTimeNote(totalItems: number): string {

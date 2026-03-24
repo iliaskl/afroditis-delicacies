@@ -1687,7 +1687,7 @@ body.modal-open {
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  padding: 0.4rem 0;
+  padding: 0.6rem 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -1712,13 +1712,6 @@ body.modal-open {
   text-align: right;
 }
 
-.order-detail-address {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1rem;
-  color: var(--ink);
-  margin: 0;
-  line-height: 1.6;
-}
 
 /* Items inside detail modal */
 .order-detail-items {

@@ -129,7 +129,7 @@ header::before {
 }
 
 /* Underline slides in from centre */
-.nav-link::after {
+.nav-middle .nav-link::after {
   content: "";
   position: absolute;
   bottom: -2px;
@@ -142,11 +142,11 @@ header::before {
     right 0.25s;
 }
 
-.nav-link:hover {
+.nav-middle .nav-link:hover {
   color: var(--ink);
 }
 
-.nav-link:hover::after {
+.nav-middle .nav-link:hover::after {
   left: 0;
   right: 0;
 }
@@ -179,11 +179,7 @@ header::before {
   position: relative;
 }
 
-.nav-button:hover,
-.cart-button:hover,
-.orders-button:hover {
-  background: var(--sage-tint);
-}
+
 
 /* Icons */
 .user-icon,
@@ -196,6 +192,7 @@ header::before {
 }
 
 .nav-button:hover .user-icon,
+.user-icon:hover,
 .cart-button:hover .cart-icon,
 .orders-button:hover .orders-icon {
   fill: var(--sage-dark);
