@@ -1687,7 +1687,7 @@ body.modal-open {
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  padding: 0.4rem 0;
+  padding: 0.6rem 0;
   border-bottom: 1px solid var(--border);
 }
 

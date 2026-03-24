@@ -41,7 +41,7 @@ const steps = [
 const leadTimes = [
   { label: "Small Order", detail: "1–3 items", notice: "3 days" },
   { label: "Large Order", detail: "4–7 items", notice: "1 week" },
-  { label: "Catering", detail: "8+ items", notice: "3 weeks" },
+  { label: "Catering", detail: "8+ items", notice: "2 weeks" },
 ];
 
 export default function HowToOrder() {
