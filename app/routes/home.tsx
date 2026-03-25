@@ -6,9 +6,16 @@ import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/home.css";
 
+import baklavasImage from "../../src/img/carousel/baklavas.jpg";
+import melomakaronaImage from "../../src/img/carousel/melomakarona & kourabiedes.jpg";
+import miniCheeseBitesImage from "../../src/img/carousel/mini cheese bites.jpg";
+import orangePieImage from "../../src/img/carousel/orange pie.jpg";
 import pastitsioImage from "../../src/img/carousel/pastitsio.jpg";
-import tyropitaImage from "../../src/img/carousel/tyropita.jpg";
-import tritipImage from "../../src/img/carousel/tritip.jpg";
+import penneImage from "../../src/img/carousel/Penne with Seared Ahi Tuna.jpg";
+import slicedPitaImage from "../../src/img/carousel/Sliced Pita Bread with Paprika.jpg";
+import spanakopitaImage from "../../src/img/carousel/spanakopita 2.jpg";
+import tsourekiImage from "../../src/img/carousel/tsoureki.jpg";
+import tzatzikiImage from "../../src/img/carousel/tzatziki.jpg";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -17,47 +24,54 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-// ── Panel image pools ──────────────────────────────────────────────────────
-// Top and bottom panels draw from separate arrays so they never show the
-// same dish at the same time. Add more images here when available — no other
-// changes needed.
 const topImages = [
   { url: pastitsioImage, label: "Pastitsio" },
-  { url: tritipImage, label: "Tri-Tip" },
-  { url: tyropitaImage, label: "Tyropita" },
+  { url: spanakopitaImage, label: "Spanakopita" },
+  { url: baklavasImage, label: "Baklava" },
+  { url: penneImage, label: "Penne with Seared Ahi Tuna" },
+  { url: tsourekiImage, label: "Tsoureki" },
 ];
 
 const bottomImages = [
-  { url: tyropitaImage, label: "Tyropita" },
-  { url: pastitsioImage, label: "Pastitsio" },
-  { url: tritipImage, label: "Tri-Tip" },
+  { url: tzatzikiImage, label: "Tzatziki" },
+  { url: melomakaronaImage, label: "Melomakarona & Kourabiedes" },
+  { url: miniCheeseBitesImage, label: "Mini Cheese Bites" },
+  { url: orangePieImage, label: "Orange Pie" },
+  { url: slicedPitaImage, label: "Sliced Pita Bread" },
 ];
 
-// Slide direction type
 type SlideDir = "left" | "right" | null;
 
 export default function Home() {
-  const [topIndex, setTopIndex] = useState(0);
-  const [bottomIndex, setBottomIndex] = useState(0);
+  const [topIndex, setTopIndex] = useState(() =>
+    Math.floor(Math.random() * topImages.length),
+  );
+  const [topLabelIndex, setTopLabelIndex] = useState(() => topIndex);
+  const [bottomIndex, setBottomIndex] = useState(() =>
+    Math.floor(Math.random() * bottomImages.length),
+  );
+  const [bottomLabelIndex, setBottomLabelIndex] = useState(() => bottomIndex);
   const [topDir, setTopDir] = useState<SlideDir>(null);
   const [bottomDir, setBottomDir] = useState<SlideDir>(null);
 
   const topTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Advance top panel every 7s, then bottom panel 2.5s later
+  const topNextIndex = (topIndex + 1) % topImages.length;
+  const bottomNextIndex = (bottomIndex + 1) % bottomImages.length;
+
   useEffect(() => {
     const cycle = () => {
-      // Top panel slides out to the right
-      setTopDir("right");
+      setTopDir("left");
+      setTopLabelIndex((i) => (i + 1) % topImages.length);
       topTimer.current = setTimeout(() => {
         setTopIndex((i) => (i + 1) % topImages.length);
         setTopDir(null);
       }, 600);
 
-      // Bottom panel slides out to the left 2.5s after top
       bottomTimer.current = setTimeout(() => {
-        setBottomDir("left");
+        setBottomDir("right");
+        setBottomLabelIndex((i) => (i + 1) % bottomImages.length);
         setTimeout(() => {
           setBottomIndex((i) => (i + 1) % bottomImages.length);
           setBottomDir(null);
@@ -73,8 +87,10 @@ export default function Home() {
     };
   }, []);
 
-  const topImg = topImages[topIndex];
-  const bottomImg = bottomImages[bottomIndex];
+  const topImg = topImages[topLabelIndex];
+  const topNextImg = topImages[topNextIndex];
+  const bottomImg = bottomImages[bottomLabelIndex];
+  const bottomNextImg = bottomImages[bottomNextIndex];
 
   return (
     <div className="home-page">
@@ -127,10 +143,14 @@ export default function Home() {
 
         {/* ── RIGHT: stacked cycling dish panels ── */}
         <div className="hero-right">
-          {/* Top panel — slides out to the right */}
+          {/* Top panel */}
           <div className="dish-panel dish-panel-top">
             <div
-              className={`dish-photo${topDir ? ` slide-out-${topDir}` : ""}`}
+              className="dish-photo"
+              style={{ backgroundImage: `url(${topNextImg.url})` }}
+            />
+            <div
+              className={`dish-photo dish-photo-overlay${topDir ? ` slide-out-${topDir}` : ""}`}
               style={{ backgroundImage: `url(${topImg.url})` }}
             />
             <div className="dish-scrim" />
@@ -139,10 +159,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bottom panel — slides out to the left */}
+          {/* Bottom panel */}
           <div className="dish-panel dish-panel-bottom dish-panel-name-right">
             <div
-              className={`dish-photo${bottomDir ? ` slide-out-${bottomDir}` : ""}`}
+              className="dish-photo"
+              style={{ backgroundImage: `url(${bottomNextImg.url})` }}
+            />
+            <div
+              className={`dish-photo dish-photo-overlay${bottomDir ? ` slide-out-${bottomDir}` : ""}`}
               style={{ backgroundImage: `url(${bottomImg.url})` }}
             />
             <div className="dish-scrim" />

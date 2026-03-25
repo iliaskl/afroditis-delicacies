@@ -293,7 +293,7 @@ export default function MenuPageContent({
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Price:</label>
+                <label>Small Price:</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -305,7 +305,7 @@ export default function MenuPageContent({
                 />
               </div>
               <div className="form-group">
-                <label>Small Price: (optional)</label>
+                <label>Large Price: (optional)</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -397,7 +397,7 @@ export default function MenuPageContent({
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Price:</label>
+                <label>Small Price:</label>
                 <input
                   type="number"
                   min="0"
@@ -408,7 +408,7 @@ export default function MenuPageContent({
                 />
               </div>
               <div className="form-group">
-                <label>Small Price: (optional)</label>
+                <label>Large Price: (optional)</label>
                 <input
                   type="number"
                   min="0"

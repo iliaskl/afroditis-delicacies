@@ -262,6 +262,10 @@
   animation: slideOutLeft 0.6s ease forwards;
 }
 
+.dish-photo-overlay {
+  z-index: 1;
+}
+
 @keyframes slideOutRight {
   from {
     transform: translateX(0);
