@@ -197,10 +197,10 @@ export default function MenuCategorySection({
                   {item.secondPrice && item.secondPrice > 0 ? (
                     <div className="pies-pricing">
                       <span className="price price-column">
-                        ${item.secondPrice.toFixed(2)}
+                        ${item.price.toFixed(2)}
                       </span>
                       <span className="price price-column">
-                        ${item.price.toFixed(2)}
+                        ${item.secondPrice.toFixed(2)}
                       </span>
                     </div>
                   ) : (

@@ -61,7 +61,7 @@ const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
   };
 
   const totalPrice = actuallyHasTwoSizes
-    ? quantities.large * item.price + quantities.small * (item.secondPrice || 0)
+    ? quantities.small * item.price + quantities.large * (item.secondPrice || 0)
     : quantities.single * item.price;
 
   const hasSelection = actuallyHasTwoSizes
@@ -93,18 +93,18 @@ const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
       const cartQuantities: CartItemQuantity[] = [];
 
       if (actuallyHasTwoSizes) {
-        if (quantities.large > 0) {
-          cartQuantities.push({
-            size: "Large",
-            price: item.price,
-            quantity: quantities.large,
-          });
-        }
         if (quantities.small > 0) {
           cartQuantities.push({
             size: "Small",
-            price: item.secondPrice || 0,
+            price: item.price,
             quantity: quantities.small,
+          });
+        }
+        if (quantities.large > 0) {
+          cartQuantities.push({
+            size: "Large",
+            price: item.secondPrice || 0,
+            quantity: quantities.large,
           });
         }
       } else {
@@ -211,35 +211,8 @@ const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
               <>
                 <div className="size-option">
                   <div className="size-info">
-                    <span className="size-label">Large</span>
-                    <span className="size-price">${item.price.toFixed(2)}</span>
-                  </div>
-                  <div className="quantity-controls">
-                    <button
-                      className="quantity-btn minus-btn"
-                      onClick={() => updateQuantity("large", -1)}
-                      disabled={quantities.large === 0}
-                      aria-label="Decrease large quantity"
-                    >
-                      −
-                    </button>
-                    <span className="quantity-display">{quantities.large}</span>
-                    <button
-                      className="quantity-btn plus-btn"
-                      onClick={() => updateQuantity("large", 1)}
-                      aria-label="Increase large quantity"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="size-option">
-                  <div className="size-info">
                     <span className="size-label">Small</span>
-                    <span className="size-price">
-                      ${(item.secondPrice || 0).toFixed(2)}
-                    </span>
+                    <span className="size-price">${item.price.toFixed(2)}</span>
                   </div>
                   <div className="quantity-controls">
                     <button
@@ -255,6 +228,33 @@ const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
                       className="quantity-btn plus-btn"
                       onClick={() => updateQuantity("small", 1)}
                       aria-label="Increase small quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="size-option">
+                  <div className="size-info">
+                    <span className="size-label">Large</span>
+                    <span className="size-price">
+                      ${(item.secondPrice || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="quantity-controls">
+                    <button
+                      className="quantity-btn minus-btn"
+                      onClick={() => updateQuantity("large", -1)}
+                      disabled={quantities.large === 0}
+                      aria-label="Decrease large quantity"
+                    >
+                      −
+                    </button>
+                    <span className="quantity-display">{quantities.large}</span>
+                    <button
+                      className="quantity-btn plus-btn"
+                      onClick={() => updateQuantity("large", 1)}
+                      aria-label="Increase large quantity"
                     >
                       +
                     </button>
