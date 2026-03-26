@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useCart } from "../../context/cartContext/cartContext";
+import { useAuth } from "../../context/authContext/authContext";
 import { getMenuData } from "../../services/menuService";
 import "../../styles/cartPopup.css";
 
@@ -18,15 +19,24 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
     clearCart,
     loading,
   } = useCart();
+  const { user, sendVerificationEmail } = useAuth();
   const navigate = useNavigate();
 
   const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
+
+  const isGoogleUser = user?.providerData.some(
+    (p) => p.providerId === "google.com",
+  );
+  const isUnverified = !!user && !isGoogleUser && !user.emailVerified;
 
   useEffect(() => {
     if (!isOpen) {
       setUnavailableIds(new Set());
       setAvailabilityChecked(false);
+      setVerifyMessage(null);
       return;
     }
     if (cartItems.length === 0) {
@@ -88,6 +98,19 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
     onClose();
     document.body.classList.remove("modal-open");
     navigate("/checkout");
+  };
+
+  const handleSendVerification = async () => {
+    setVerifyLoading(true);
+    setVerifyMessage(null);
+    try {
+      await sendVerificationEmail();
+      setVerifyMessage("Verification email sent! Check your inbox.");
+    } catch (err: any) {
+      setVerifyMessage(err.message || "Failed to send verification email.");
+    } finally {
+      setVerifyLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -309,27 +332,58 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
               </div>
             </div>
 
-            <button
-              className="checkout-btn"
-              onClick={handleProceedToCheckout}
-              disabled={loading || hasUnavailable}
-            >
-              {hasUnavailable
-                ? "Remove unavailable items to continue"
-                : "Proceed to Checkout"}
-              {!hasUnavailable && (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+            {isUnverified ? (
+              <div className="cart-verify-block">
+                <p className="cart-verify-message">
+                  Verify your account before checking out.
+                </p>
+                <button
+                  className="cart-verify-btn"
+                  onClick={handleSendVerification}
+                  disabled={verifyLoading}
                 >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              )}
-            </button>
+                  {verifyLoading ? "Sending…" : "Send Verification Email"}
+                </button>
+                {verifyMessage && (
+                  <p className="cart-verify-feedback">{verifyMessage}</p>
+                )}
+                <button className="checkout-btn" disabled={true}>
+                  Proceed to Checkout
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <button
+                className="checkout-btn"
+                onClick={handleProceedToCheckout}
+                disabled={loading || hasUnavailable}
+              >
+                {hasUnavailable
+                  ? "Remove unavailable items to continue"
+                  : "Proceed to Checkout"}
+                {!hasUnavailable && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                )}
+              </button>
+            )}
           </div>
         )}
       </div>

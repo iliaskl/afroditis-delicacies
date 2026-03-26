@@ -1,5 +1,6 @@
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup,
   linkWithPopup,
@@ -118,11 +119,13 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       lastName: sanitizedLast,
       displayName: `${sanitizedFirst} ${sanitizedLast}`,
       phoneNumber: sanitizeText(formData.phoneNumber || "", MAX_LENGTHS.phone),
+      emailVerified: false,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
 
     await setDoc(doc(db, "users", user.uid), userProfileData);
+    await sendEmailVerification(user);
     return user;
   } catch (error) {
     const authError = error as AuthError;
@@ -401,6 +404,22 @@ function getAuthErrorMessage(error: AuthError): string {
       return (
         cleanMessage(error.message) || "An error occurred. Please try again."
       );
+  }
+}
+
+export async function sendVerificationEmail(): Promise<void> {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No user signed in");
+    await sendEmailVerification(user);
+  } catch (error) {
+    const authError = error as AuthError;
+    if (authError.code === "auth/too-many-requests")
+      throw new Error(
+        "Please wait a moment before requesting another verification email.",
+      );
+    console.error("Send verification email error:", authError);
+    throw new Error("Failed to send verification email. Please try again.");
   }
 }
 
