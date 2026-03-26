@@ -15,6 +15,7 @@ import { emailService } from "../services/emailService";
 import type { Order } from "../types/types";
 import OrderSection from "../components/orders/OrderSection";
 import ConfirmDialog from "../components/orders/ConfirmDialog";
+import AdminOrderForm from "../components/orders/AdminOrderForm";
 import "../styles/orders.css";
 import { sanitizeText, MAX_LENGTHS } from "../utils/sanitize";
 
@@ -34,6 +35,7 @@ export default function Orders() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAdminForm, setShowAdminForm] = useState(false);
   const [confirmState, setConfirmState] = useState<{
     type: "approve" | "decline" | "deliver" | "scrap";
     order: Order;
@@ -195,6 +197,14 @@ export default function Orders() {
             </div>
           ) : (
             <div className="orders-sections">
+              <div className="admin-new-order-row">
+                <button
+                  className="admin-new-order-btn"
+                  onClick={() => setShowAdminForm(true)}
+                >
+                  + Make New Order
+                </button>
+              </div>
               <OrderSection
                 title="New Orders"
                 orders={pagedNewOrders}
@@ -246,6 +256,13 @@ export default function Orders() {
       </main>
 
       <Footer />
+
+      {showAdminForm && (
+        <AdminOrderForm
+          onClose={() => setShowAdminForm(false)}
+          onSuccess={() => setShowAdminForm(false)}
+        />
+      )}
 
       {confirmState?.type === "approve" && (
         <ConfirmDialog

@@ -818,3 +818,31 @@
     padding: 1rem;
   }
 }
+
+/* ── Admin new order button ──────────────────────────────────────────────── */
+
+.admin-new-order-row {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-new-order-btn {
+  padding: 0.75rem 2rem;
+  background: none;
+  border: 1px solid var(--border-med);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.admin-new-order-btn:hover {
+  border-color: var(--sage);
+  color: var(--sage);
+}

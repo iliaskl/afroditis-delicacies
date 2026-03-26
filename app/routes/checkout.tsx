@@ -23,7 +23,9 @@ import AddressSection from "../components/checkout/AddressSection";
 import DeliveryScheduler, {
   getEarliestDeliveryDate,
 } from "../components/checkout/DeliveryScheduler";
+import NotFound from "./not-found";
 import "../styles/checkout.css";
+import "../styles/deliveryScheduler.css";
 import {
   sanitizeText,
   isValidEmail,
@@ -99,9 +101,13 @@ export default function Checkout() {
   const profile = useUserProfile();
   const { cartItems, cartTotal, clearCart } = useCart();
 
-  // ── Redirect if not logged in ──
+  // ── Redirect if not logged in or unverified ──
+  const isGoogleUser = user?.providerData.some(
+    (p) => p.providerId === "google.com",
+  );
+
   useEffect(() => {
-    if (!user) navigate("/");
+    if (!user || (!isGoogleUser && !user.emailVerified)) navigate("/");
   }, [user, navigate]);
 
   // ── Form fields ──

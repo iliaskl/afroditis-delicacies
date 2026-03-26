@@ -1534,7 +1534,7 @@ body.modal-open {
   cursor: not-allowed;
 }
 
-/* ── Verification Banner (legacy — kept for safety) ──────────────────────── */
+/* ── Verification Banner ─────────────────────────────────────────────────── */
 
 .verification-banner {
   background-color: rgba(184, 146, 42, 0.08);
@@ -1547,7 +1547,7 @@ body.modal-open {
   margin-top: 0.5rem;
 }
 
-.verification-banner p {
+.verification-banner-text {
   font-family: "Outfit", sans-serif;
   font-size: 0.82rem;
   font-weight: 300;
@@ -1555,7 +1555,13 @@ body.modal-open {
   margin: 0;
 }
 
-.resend-button {
+.verification-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.verification-send-btn {
   background-color: var(--gold);
   color: white;
   border: none;
@@ -1570,13 +1576,43 @@ body.modal-open {
   transition: background-color 0.2s ease;
 }
 
-.resend-button:hover:not(:disabled) {
+.verification-send-btn:hover:not(:disabled) {
   background-color: #9a7822;
 }
 
-.resend-button:disabled {
+.verification-send-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.verification-check-btn {
+  background: none;
+  border: 1px solid rgba(184, 146, 42, 0.4);
+  border-radius: 0;
+  padding: 0.5rem 1rem;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a6118;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.verification-check-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.verification-feedback {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: #7a6118;
+  margin: 0;
 }
 
 /* ── Order Detail Modal ──────────────────────────────────────────────────── */
@@ -1711,7 +1747,6 @@ body.modal-open {
   font-weight: 400;
   text-align: right;
 }
-
 
 /* Items inside detail modal */
 .order-detail-items {

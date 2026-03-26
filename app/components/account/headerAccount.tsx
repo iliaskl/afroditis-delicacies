@@ -51,13 +51,23 @@ function ChevronRight() {
 }
 
 const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
-  const { user, userProfile, logout } = useAuth();
+  const { user, userProfile, logout, sendVerificationEmail, reloadUser } =
+    useAuth();
   const isAdmin = user && userProfile?.role === "admin";
+
+  const isGoogleUser = user?.providerData.some(
+    (p) => p.providerId === "google.com",
+  );
+  const isUnverified = !!user && !isGoogleUser && !user.emailVerified;
 
   const [currentView, setCurrentView] = useState<ProfileView>("main");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // ── Verification banner state ──
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
 
   // ── Favorites state ──
   const [favoriteItems, setFavoriteItems] = useState<MenuItem[]>([]);
@@ -102,6 +112,15 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       .finally(() => setFavoritesLoading(false));
   }, [currentView, user]);
 
+  // Reset verify message when panel closes or view changes
+  useEffect(() => {
+    if (!isOpen) setVerifyMessage(null);
+  }, [isOpen]);
+
+  useEffect(() => {
+    setVerifyMessage(null);
+  }, [currentView]);
+
   const navigateToView = (view: ProfileView) => {
     setCurrentView(view);
     setError(null);
@@ -130,6 +149,19 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
       console.error("Failed to remove favorite:", err);
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const handleSendVerification = async () => {
+    setVerifyLoading(true);
+    setVerifyMessage(null);
+    try {
+      await sendVerificationEmail();
+      setVerifyMessage("Verification email sent! Check your inbox.");
+    } catch (err: any) {
+      setVerifyMessage(err.message || "Failed to send verification email.");
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -165,6 +197,27 @@ const HeaderAccount: React.FC<HeaderAccountProps> = ({ isOpen, onClose }) => {
               <div className="user-info">
                 <h3>Welcome, {userProfile?.firstName || user.displayName}!</h3>
                 <p className="user-email">{user.email}</p>
+
+                {isUnverified && (
+                  <div className="verification-banner">
+                    <p className="verification-banner-text">
+                      Your account is not verified. Please check your inbox for
+                      a verification email.
+                    </p>
+                    <div className="verification-banner-actions">
+                      <button
+                        className="verification-send-btn"
+                        onClick={handleSendVerification}
+                        disabled={verifyLoading}
+                      >
+                        {verifyLoading ? "Sending…" : "Send Verification Email"}
+                      </button>
+                    </div>
+                    {verifyMessage && (
+                      <p className="verification-feedback">{verifyMessage}</p>
+                    )}
+                  </div>
+                )}
 
                 {error &&
                   !error.toLowerCase().includes("permission") &&

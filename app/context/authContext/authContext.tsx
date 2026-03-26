@@ -14,6 +14,7 @@ import {
   updateUserEmail,
   updateUserPassword,
   deleteUserAccount,
+  sendVerificationEmail,
 } from "../../services/authService";
 import type { UserProfile, AuthFormData } from "../../types/types";
 
@@ -32,6 +33,8 @@ interface AuthContextType {
   changeEmail: (newEmail: string) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
   deleteAccount: (password?: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
+  reloadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -114,6 +117,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(null);
   }
 
+  async function sendVerificationEmailFn(): Promise<void> {
+    await sendVerificationEmail();
+  }
+
+  async function reloadUser(): Promise<void> {
+    if (!user) return;
+    await user.reload();
+    const profile = await getUserProfile(user.uid);
+    setUserProfile(profile);
+    // Force React to see the updated Firebase user object
+    setUser({ ...user } as User);
+  }
+
   const value: AuthContextType = {
     user,
     userProfile,
@@ -129,6 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     changeEmail,
     changePassword,
     deleteAccount,
+    sendVerificationEmail: sendVerificationEmailFn,
+    reloadUser,
   };
 
   return (

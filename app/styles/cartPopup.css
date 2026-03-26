@@ -674,3 +674,54 @@
     font-size: 1.5rem;
   }
 }
+
+/* ── Verification block in cart footer ───────────────────────────────────── */
+
+.cart-verify-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cart-verify-message {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: #7a6118;
+  margin: 0;
+  text-align: center;
+}
+
+.cart-verify-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background-color: var(--gold, #b8922a);
+  border: none;
+  border-radius: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cart-verify-btn:hover:not(:disabled) {
+  background-color: #9a7822;
+}
+
+.cart-verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cart-verify-feedback {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: #7a6118;
+  margin: 0;
+  text-align: center;
+}
