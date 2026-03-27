@@ -229,14 +229,8 @@ export async function logoutUser(): Promise<void> {
 
 export async function resetPassword(email: string): Promise<void> {
   try {
-    const exists = await checkEmailExists(email);
-    if (!exists)
-      throw new Error(
-        "No account found with this email address. Please check or sign up.",
-      );
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
-    if (error instanceof Error && !(error as AuthError).code) throw error;
     const authError = error as AuthError;
     console.error("Password reset error:", authError);
     throw new Error(getAuthErrorMessage(authError));
@@ -321,17 +315,6 @@ export async function updateUserPassword(newPassword: string): Promise<void> {
     const authError = error as AuthError;
     console.error("Update password error:", authError);
     throw new Error(getAuthErrorMessage(authError));
-  }
-}
-
-export async function checkEmailExists(email: string): Promise<boolean> {
-  try {
-    const q = query(collection(db, "users"), where("email", "==", email));
-    const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
-  } catch (error) {
-    console.error("Check email error:", error);
-    return false;
   }
 }
 

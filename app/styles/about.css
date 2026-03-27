@@ -121,7 +121,8 @@
   transition: background 0.2s;
 }
 
-.about-cta:hover {background: var(--sage-dark);
+.about-cta:hover {
+  background: var(--sage-dark);
   color: var(--warm-white);
   transform: translateY(-1px);
 }

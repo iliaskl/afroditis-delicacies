@@ -73,24 +73,20 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
   };
 
   const handleRemoveItem = async (itemId: string) => {
-    if (confirm("Remove this item from your cart?")) {
-      try {
-        await removeItem(itemId);
-      } catch (error) {
-        console.error("Failed to remove item:", error);
-        alert("Failed to remove item. Please try again.");
-      }
+    try {
+      await removeItem(itemId);
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+      alert("Failed to remove item. Please try again.");
     }
   };
 
   const handleClearCart = async () => {
-    if (confirm("Are you sure you want to clear your entire cart?")) {
-      try {
-        await clearCart();
-      } catch (error) {
-        console.error("Failed to clear cart:", error);
-        alert("Failed to clear cart. Please try again.");
-      }
+    try {
+      await clearCart();
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+      alert("Failed to clear cart. Please try again.");
     }
   };
 
