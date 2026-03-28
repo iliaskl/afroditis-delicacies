@@ -206,20 +206,12 @@
     justify-content: flex-start;
   }
 
-  .about-right {
-    height: 360px;
-  }
-
   .about-video-section {
     padding: 48px 6% 56px;
   }
 }
 
 @media (max-width: 480px) {
-  .about-right {
-    height: 280px;
-  }
-
   .about-video-section {
     padding: 40px 5% 48px;
   }

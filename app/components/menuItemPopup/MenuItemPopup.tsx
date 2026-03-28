@@ -77,10 +77,6 @@ const MenuItemPopup = ({ item, hasTwoSizes, onClose }: MenuItemPopupProps) => {
   };
 
   const handleAddToCart = async () => {
-    if (!user) {
-      setError("Please sign in to add items to your cart");
-      return;
-    }
     if (!hasSelection) {
       setError("Please select at least one item");
       return;

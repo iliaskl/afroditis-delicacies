@@ -969,4 +969,51 @@
   .category-size-placeholder {
     display: none;
   }
+
+  .category-size-headers {
+    display: none;
+  }
+
+  .category-size-placeholder {
+    display: none;
+  }
+
+  /* Remove fixed widths so prices can sit naturally */
+  .price-column {
+    width: auto;
+    text-align: left;
+  }
+
+  .single-price {
+    width: auto;
+    padding-right: 0;
+    text-align: right;
+  }
+
+  /* Stack two-size prices vertically with inline labels */
+  .pies-pricing {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .pies-pricing .price-column:first-child::before {
+    content: "Sm ";
+    font-family: "Outfit", sans-serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .pies-pricing .price-column:last-child::before {
+    content: "Lg ";
+    font-family: "Outfit", sans-serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 }

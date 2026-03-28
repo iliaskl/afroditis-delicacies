@@ -14,6 +14,102 @@ import {
 import { db } from "../firebase/firebase";
 import type { CartItem, CartItemQuantity } from "../types/types";
 
+// --- Guest Cart (localStorage) ---
+
+const GUEST_CART_KEY = "afroditi_guest_cart";
+
+export function getGuestCart(): Omit<CartItem, "id" | "userId" | "addedAt">[] {
+  try {
+    return JSON.parse(localStorage.getItem(GUEST_CART_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveGuestCart(
+  items: Omit<CartItem, "id" | "userId" | "addedAt">[],
+): void {
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+}
+
+export function clearGuestCart(): void {
+  localStorage.removeItem(GUEST_CART_KEY);
+}
+
+export function addToGuestCart(
+  item: Omit<CartItem, "id" | "userId" | "addedAt">,
+): void {
+  const items = getGuestCart();
+  const existingIndex = items.findIndex(
+    (i) => i.menuItemId === item.menuItemId,
+  );
+
+  if (existingIndex >= 0) {
+    const updatedQuantities = [...items[existingIndex].quantities];
+    item.quantities.forEach((newQty) => {
+      const qIndex = updatedQuantities.findIndex((q) => q.size === newQty.size);
+      if (qIndex >= 0) {
+        updatedQuantities[qIndex].quantity += newQty.quantity;
+      } else {
+        updatedQuantities.push(newQty);
+      }
+    });
+
+    const existingInstructions = items[existingIndex].specialInstructions || "";
+    items[existingIndex] = {
+      ...items[existingIndex],
+      quantities: updatedQuantities,
+      specialInstructions:
+        item.specialInstructions && existingInstructions
+          ? `${existingInstructions}\n${item.specialInstructions}`
+          : item.specialInstructions || existingInstructions,
+    };
+  } else {
+    items.push(item);
+  }
+
+  saveGuestCart(items);
+}
+
+export function updateGuestCartItemQuantity(
+  menuItemId: string,
+  size: string,
+  quantity: number,
+): void {
+  const items = getGuestCart();
+  const index = items.findIndex((i) => i.menuItemId === menuItemId);
+  if (index < 0) return;
+
+  const updatedQuantities = items[index].quantities
+    .map((q) => (q.size === size ? { ...q, quantity } : q))
+    .filter((q) => q.quantity > 0);
+
+  if (updatedQuantities.length === 0) {
+    items.splice(index, 1);
+  } else {
+    items[index].quantities = updatedQuantities;
+  }
+
+  saveGuestCart(items);
+}
+
+export function removeFromGuestCart(menuItemId: string): void {
+  saveGuestCart(getGuestCart().filter((i) => i.menuItemId !== menuItemId));
+}
+
+// --- Merge guest cart into Firestore on login/signup ---
+
+export async function mergeGuestCartIntoFirestore(
+  userId: string,
+): Promise<void> {
+  const guestItems = getGuestCart();
+  if (!guestItems.length) return;
+  for (const item of guestItems) await addToCart(userId, item);
+  clearGuestCart();
+}
+
+// --- Firestore Cart (authenticated users) ---
+
 export async function getCart(userId: string): Promise<CartItem[]> {
   try {
     const q = query(collection(db, "carts"), where("userId", "==", userId));
@@ -108,7 +204,6 @@ export async function updateCartItemQuantity(
     if (!snapshot.exists()) throw new Error("Cart item not found");
 
     const quantities: CartItemQuantity[] = snapshot.data().quantities || [];
-
     const updatedQuantities = quantities
       .map((q) => (q.size === size ? { ...q, quantity } : q))
       .filter((q) => q.quantity > 0);

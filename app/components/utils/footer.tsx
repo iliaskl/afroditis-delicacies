@@ -39,7 +39,7 @@ const Footer = () => (
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d={path} />
                 </svg>
-                {label}
+                <span>{label}</span>
               </a>
             ))}
           </div>
@@ -54,8 +54,15 @@ const Footer = () => (
         {/* Contact */}
         <div className="footer-column">
           <h4>Email Us</h4>
-          <a href="mailto:info@afroditisdelicacies.com">
-            info@afroditisdelicacies.com
+          <a
+            href="mailto:info@afroditisdelicacies.com"
+            className="footer-email-link"
+            aria-label="Email us"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--sage)">
+              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+            </svg>
+            <span>info@afroditisdelicacies.com</span>
           </a>
         </div>
       </div>
