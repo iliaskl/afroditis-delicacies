@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "../authContext/authContext";
 import {
   getCart,
@@ -6,6 +6,12 @@ import {
   updateCartItemQuantity as updateCartItemService,
   removeFromCart as removeFromCartService,
   clearCart as clearCartService,
+  getGuestCart,
+  addToGuestCart,
+  updateGuestCartItemQuantity,
+  removeFromGuestCart,
+  clearGuestCart,
+  mergeGuestCartIntoFirestore,
 } from "../../services/cartService";
 import type { CartItem } from "../../types/types";
 
@@ -29,10 +35,23 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
+// Converts guest cart items (no id/userId/addedAt) into full CartItem shape for local state
+function guestItemsToCartItems(
+  items: Omit<CartItem, "id" | "userId" | "addedAt">[],
+): CartItem[] {
+  return items.map((item) => ({
+    ...item,
+    id: item.menuItemId,
+    userId: "guest",
+    addedAt: new Date(),
+  }));
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const prevUserRef = useRef<string | null>(null);
 
   const cartCount = cartItems.reduce(
     (total, item) =>
@@ -48,27 +67,54 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadCart() {
-      if (!user) {
-        setCartItems([]);
+      const prevUid = prevUserRef.current;
+      const currentUid = user?.uid ?? null;
+      prevUserRef.current = currentUid;
+
+      // Guest → logged in: merge then load from Firestore
+      if (!prevUid && currentUid) {
+        try {
+          setLoading(true);
+          await mergeGuestCartIntoFirestore(currentUid);
+          const items = await getCart(currentUid);
+          setCartItems(items);
+        } catch (error) {
+          console.error("Failed to merge/load cart:", error);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
-      try {
-        setLoading(true);
-        const items = await getCart(user.uid);
-        setCartItems(items);
-      } catch (error) {
-        console.error("Failed to load cart:", error);
-      } finally {
-        setLoading(false);
+
+      // Logged in: load from Firestore
+      if (currentUid) {
+        try {
+          setLoading(true);
+          const items = await getCart(currentUid);
+          setCartItems(items);
+        } catch (error) {
+          console.error("Failed to load cart:", error);
+        } finally {
+          setLoading(false);
+        }
+        return;
       }
+
+      // Guest: load from localStorage
+      setCartItems(guestItemsToCartItems(getGuestCart()));
     }
+
     loadCart();
   }, [user]);
 
   async function addToCart(
     item: Omit<CartItem, "id" | "userId" | "addedAt">,
   ): Promise<void> {
-    if (!user) throw new Error("Must be logged in to add items to cart");
+    if (!user) {
+      addToGuestCart(item);
+      setCartItems(guestItemsToCartItems(getGuestCart()));
+      return;
+    }
     await addToCartService(user.uid, item);
     await refreshCart();
   }
@@ -78,25 +124,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     size: string,
     quantity: number,
   ): Promise<void> {
-    if (!user) throw new Error("Must be logged in to update cart");
+    if (!user) {
+      updateGuestCartItemQuantity(itemId, size, quantity);
+      setCartItems(guestItemsToCartItems(getGuestCart()));
+      return;
+    }
     await updateCartItemService(itemId, size, quantity);
     await refreshCart();
   }
 
   async function removeItem(itemId: string): Promise<void> {
-    if (!user) throw new Error("Must be logged in to remove items");
+    if (!user) {
+      removeFromGuestCart(itemId);
+      setCartItems(guestItemsToCartItems(getGuestCart()));
+      return;
+    }
     await removeFromCartService(itemId);
     await refreshCart();
   }
 
   async function clearCart(): Promise<void> {
-    if (!user) throw new Error("Must be logged in to clear cart");
+    if (!user) {
+      clearGuestCart();
+      setCartItems([]);
+      return;
+    }
     await clearCartService(user.uid);
     setCartItems([]);
   }
 
   async function refreshCart(): Promise<void> {
-    if (!user) return;
+    if (!user) {
+      setCartItems(guestItemsToCartItems(getGuestCart()));
+      return;
+    }
     const items = await getCart(user.uid);
     setCartItems(items);
   }
@@ -118,8 +179,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within CartProvider");
-  }
+  if (!context) throw new Error("useCart must be used within CartProvider");
   return context;
 }

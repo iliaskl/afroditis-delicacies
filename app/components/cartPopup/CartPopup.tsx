@@ -8,9 +8,10 @@ import "../../styles/cartPopup.css";
 interface CartPopupProps {
   isOpen: boolean;
   onClose: () => void;
+  onAuthRequired?: () => void;
 }
 
-const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
+const CartPopup = ({ isOpen, onClose, onAuthRequired }: CartPopupProps) => {
   const {
     cartItems,
     cartTotal,
@@ -91,6 +92,11 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
   };
 
   const handleProceedToCheckout = () => {
+    if (!user) {
+      onClose();
+      onAuthRequired?.();
+      return;
+    }
     onClose();
     document.body.classList.remove("modal-open");
     navigate("/checkout");
@@ -328,7 +334,30 @@ const CartPopup = ({ isOpen, onClose }: CartPopupProps) => {
               </div>
             </div>
 
-            {isUnverified ? (
+            {!user ? (
+              <div className="cart-verify-block">
+                <p className="cart-verify-message">
+                  Sign in or create an account to place your order.
+                </p>
+                <button
+                  className="checkout-btn"
+                  onClick={handleProceedToCheckout}
+                  disabled={loading || hasUnavailable}
+                >
+                  Sign In to Checkout
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+            ) : isUnverified ? (
               <div className="cart-verify-block">
                 <p className="cart-verify-message">
                   Verify your account before checking out.

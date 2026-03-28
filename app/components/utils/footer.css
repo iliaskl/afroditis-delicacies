@@ -69,6 +69,7 @@ footer {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted);
+  margin: 0;
 }
 
 /* Col 1 — social links */
@@ -102,7 +103,7 @@ footer {
 }
 
 /* Col 3 — email link */
-.footer-column a {
+.footer-email-link {
   color: var(--ink-mid);
   text-decoration: none;
   font-family: "Outfit", sans-serif;
@@ -110,10 +111,19 @@ footer {
   font-weight: 400;
   letter-spacing: 0.04em;
   transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
-.footer-column a:hover {
+.footer-email-link:hover {
   color: var(--sage);
+}
+
+/* Icon hidden on desktop, shown on mobile */
+.footer-email-link svg {
+  display: none;
+  flex-shrink: 0;
 }
 
 /* Copyright bar */
@@ -137,30 +147,86 @@ footer {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .footer-columns {
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 24px 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 10px 0;
+    gap: 0;
+    border-bottom: none;
   }
 
+  .footer-column {
+    flex: unset;
+    gap: 2px;
+  }
+
+  /* Remove all column borders on mobile */
   .footer-column + .footer-column {
     border-left: none;
-    border-top: 1px solid var(--border-med);
+    border-top: none;
     padding-left: 0;
-    padding-top: 1.5rem;
+    padding-top: 0;
   }
 
-  .footer-content {
-    padding: 0 1rem;
+  /* Hide labels */
+  .footer-column h4 {
+    display: none;
+  }
+
+  /* Col 1 — social icons only, horizontal */
+  .footer-column:nth-child(1) {
+    order: 1;
   }
 
   .social-links {
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row;
+    gap: 24px;
+    margin: 0;
   }
-}
 
-@media (max-width: 480px) {
-  .footer-column h2 {
-    font-size: 1.2rem;
+  /* Hide social link text, keep svg only */
+  .social-link span {
+    display: none;
+  }
+
+  .social-link svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  /* Col 2 — brand centre */
+  .footer-column:nth-child(2) {
+    order: 2;
+    text-align: center;
+    margin: 0 30px 0 30px;
+  }
+
+  .footer-column:nth-child(2) h2 {
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+  }
+
+  .footer-tagline {
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+  }
+
+  /* Col 3 — mail icon only */
+  .footer-column:nth-child(3) {
+    order: 3;
+  }
+
+  .footer-email-link svg {
+    display: block;
+    width: 30px;
+    height: 30px;
+  }
+
+  .footer-email-link span {
+    display: none;
+  }
+
+  .footer-content {
+    padding: 0 5%;
   }
 }
