@@ -83,9 +83,6 @@ export default function OrderRow({
     <div className={`order-row ${order.isNewForAdmin ? "order-row-new" : ""}`}>
       <div className="order-row-summary">
         <div className="order-row-left">
-          {order.isNewForAdmin && (
-            <span className="new-dot" title="New order" />
-          )}
           {isOrderExpired(order) &&
             (order.status === "pending" || order.status === "active") && (
               <span
@@ -99,7 +96,12 @@ export default function OrderRow({
                 ⚠ Overdue
               </span>
             )}
-          <span className="order-code">{order.orderCode}</span>
+          <span className="order-code">
+            {order.orderCode}
+            {order.isNewForAdmin && (
+              <span className="new-dot" title="New order" />
+            )}
+          </span>
           <span className="order-customer">{order.customerName}</span>
           <span className="order-city">{order.deliveryAddress.city}</span>
         </div>

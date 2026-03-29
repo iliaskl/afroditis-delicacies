@@ -963,58 +963,57 @@
     padding: 2rem 1.5rem;
   }
 
+  /* Show S / L headers on mobile, hide placeholder */
   .category-size-headers {
-    display: none;
+    display: flex;
   }
 
   .category-size-placeholder {
     display: none;
   }
 
-  .category-size-headers {
-    display: none;
+  /* Shrink size columns to fit mobile width */
+  .category-size-col {
+    width: 60px;
   }
 
-  .category-size-placeholder {
-    display: none;
+  .category-size-sep {
+    width: 8px;
   }
 
-  /* Remove fixed widths so prices can sit naturally */
+  /* Keep two-size prices side by side, no SM/LG labels */
+  .pies-pricing {
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+  }
+
   .price-column {
-    width: auto;
-    text-align: left;
-  }
-
-  .single-price {
-    width: auto;
-    padding-right: 0;
+    width: 60px;
     text-align: right;
   }
 
-  /* Stack two-size prices vertically with inline labels */
-  .pies-pricing {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+  .item-pricing .single-price {
+    width: 128px;
+    text-align: center;
+    padding-right: 0;
+    padding-left: 20px;
   }
 
-  .pies-pricing .price-column:first-child::before {
-    content: "Sm ";
-    font-family: "Outfit", sans-serif;
-    font-size: 0.6rem;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .item-content {
+    position: relative;
   }
 
-  .pies-pricing .price-column:last-child::before {
-    content: "Lg ";
-    font-family: "Outfit", sans-serif;
-    font-size: 0.6rem;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .item-content svg[aria-label="Favorited"] {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 205px;
+  }
+
+  .item-name {
+    max-width: 200px;
+    white-space: normal;
+    word-break: break-word;
   }
 }
