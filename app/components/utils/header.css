@@ -341,8 +341,13 @@ header::before {
     flex-direction: row;
     align-items: center;
     padding: 0 4%;
-    min-height: 60px;
+    min-height: clamp(52px, 8vw, 70px);
     position: relative;
+  }
+
+  .navbar-brand img {
+    width: clamp(50px, 5vw, 56px);
+    height: clamp(50px, 5vw, 56px);
   }
 
   /* Hide desktop nav and desktop icons */
@@ -368,7 +373,7 @@ header::before {
   .navbar::after {
     content: "Afroditi's Delicacies";
     font-family: "Playfair Display", serif;
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-size: clamp(1.1rem, 4.5vw, 1.8rem);
     font-weight: 400;
     font-style: italic;
     letter-spacing: 0.05em;

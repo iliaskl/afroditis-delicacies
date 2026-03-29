@@ -972,27 +972,34 @@
     display: none;
   }
 
-  /* Shrink size columns to fit mobile width */
+  .category-title {
+    font-size: 1.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 40%; /* caps how much space the title can claim */
+  }
+  /* Size column headers */
   .category-size-col {
-    width: 60px;
+    width: 64px;
+    min-width: 64px;
+    text-align: center; /* centre the label over the price below */
+    letter-spacing: 0.12em; /* tighten tracking so "SMALL" fits */
   }
 
   .category-size-sep {
-    width: 8px;
+    width: 0; /* remove the separator gap on mobile */
+    display: none;
   }
 
-  /* Keep two-size prices side by side, no SM/LG labels */
-  .pies-pricing {
-    flex-direction: row;
-    align-items: center;
-    gap: 0;
-  }
-
+  /* Price columns — must match .category-size-col exactly */
   .price-column {
-    width: 60px;
-    text-align: right;
+    width: 64px;
+    min-width: 64px;
+    text-align: center; /* align price under its label */
   }
 
+  /* Single price */
   .item-pricing .single-price {
     width: 128px;
     text-align: center;
@@ -1001,14 +1008,17 @@
   }
 
   .item-content {
-    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
   }
 
   .item-content svg[aria-label="Favorited"] {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 205px;
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+    margin-top: 1px;
   }
 
   .item-name {
