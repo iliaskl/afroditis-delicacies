@@ -311,12 +311,6 @@ header::before {
   gap: 12px;
 }
 
-.nav-drawer-divider {
-  height: 1px;
-  background: var(--border-med);
-  margin: 4px 5%;
-}
-
 /* Inline badge inside drawer rows */
 .nav-drawer-badge {
   margin-left: auto;
@@ -384,5 +378,16 @@ header::before {
     transform: translateX(-45%);
     pointer-events: none;
     white-space: nowrap;
+  }
+
+  .cart-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 9px;
+    height: 9px;
+    background: var(--badge-red);
+    border-radius: 50%;
+    border: 1.5px solid var(--warm-white);
   }
 }

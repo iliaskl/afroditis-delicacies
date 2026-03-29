@@ -204,9 +204,11 @@ export default function MenuCategorySection({
                       </span>
                     </div>
                   ) : (
-                    <span className="price single-price">
-                      ${item.price.toFixed(2)}
-                    </span>
+                    <div className="pies-pricing">
+                      <span className="price single-price">
+                        ${item.price.toFixed(2)}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

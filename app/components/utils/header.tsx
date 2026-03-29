@@ -216,18 +216,9 @@ const Header = () => {
                 >
                   <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
                 </svg>
-                {newOrderCount > 0 && (
-                  <span className="orders-badge" style={{ top: -8, right: -8 }}>
-                    {newOrderCount > 99 ? "99+" : newOrderCount}
-                  </span>
-                )}
+                {newOrderCount > 0 && <span className="cart-dot" />}
               </div>
               Orders
-              {newOrderCount > 0 && (
-                <span className="nav-drawer-badge">
-                  {newOrderCount > 99 ? "99+" : newOrderCount}
-                </span>
-              )}
             </button>
           ) : (
             <button
@@ -243,18 +234,9 @@ const Header = () => {
                 >
                   <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.47 5H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
                 </svg>
-                {cartCount > 0 && (
-                  <span className="cart-badge" style={{ top: -8, right: -8 }}>
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
+                {cartCount > 0 && <span className="cart-dot" />}
               </div>
               Cart
-              {cartCount > 0 && (
-                <span className="nav-drawer-badge">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
             </button>
           )}
         </div>

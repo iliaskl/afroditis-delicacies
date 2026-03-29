@@ -494,3 +494,35 @@
     border-bottom: 1px solid var(--border-light);
   }
 }
+
+@media (max-width: 480px) {
+  .aof-container {
+    max-height: 100vh;
+    height: 100vh;
+  }
+
+  .aof-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .aof-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    overflow-y: visible;
+  }
+
+  .aof-right {
+    overflow-y: visible;
+  }
+
+  .aof-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .aof-order-lines-header,
+  .aof-order-line {
+    grid-template-columns: 1fr 1fr 1fr 1fr 0.4fr;
+    font-size: 0.62rem;
+  }
+}
