@@ -1,87 +1,92 @@
-# Welcome to React Router!
+# Afroditi's Delicacies
 
-A modern, production-ready template for building full-stack React applications using React Router.
+A web application for ordering authentic homemade Greek cuisine, built for a small family business based in Bothell, WA. Customers can browse the menu, schedule a delivery, and place orders online. The business owner manages orders, the menu, and the delivery calendar through a built-in admin dashboard.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+Live site: [afroditisdelicacies.com](https://www.afroditisdelicacies.com)
 
 ---
 
-Built with ❤️ using React Router.
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | React Router v7 + TypeScript + Vite |
+| Database & Auth | Firebase Firestore + Firebase Auth |
+| Hosting | Vercel |
+| Email | Resend (transactional) · Zoho Mail (business inbox) |
+| Images | Cloudinary |
+| Maps & Address | Mapbox Geocoding API |
+| Domain | Namecheap → afroditisdelicacies.com |
+
+---
+
+## Features
+
+**Customer**
+- Browse menu by category with dish detail popups
+- Add items to cart with size and quantity selection
+- Delivery scheduling with lead-time enforcement and time slot selection
+- Address autocomplete with 25-mile delivery radius validation
+- Guest cart with auth gate at checkout
+- Order history and favorites in the account panel
+- Email confirmation on order placement and status updates
+
+**Admin**
+- Order management: approve, decline, deliver
+- Menu management: add, edit, delete, reorder dishes and categories
+- Calendar management: block unavailable delivery days
+- Analytics dashboard: revenue, order counts, top dishes, busiest days
+- Create orders manually on behalf of customers
+
+---
+
+## Business Logic
+
+**Lead times** (minimum notice required before delivery):
+- 1–3 items → 3 days
+- 4–7 items → 1 week
+- 8+ items (catering) → 2 weeks
+
+**Delivery radius:** 25 miles from Bothell, WA, validated via Mapbox + Haversine formula.
+
+**Payment:** Cash, check, Venmo, or PayPal — no integrated payment processing. Customers arrange payment directly.
+
+**Order flow:** Customer places order → status is `pending` → admin approves or declines → if approved, status becomes `active` → marked `delivered` after drop-off. Admin-created orders skip `pending` and go directly to `active`.
+
+---
+
+## Project Structure
+
+```
+app/
+├── routes/          # Page-level components (home, menu, checkout, orders, etc.)
+├── components/      # Reusable UI components
+├── services/        # All Firestore and external API logic
+├── context/         # Auth, cart, and user profile context providers
+├── styles/          # Shared CSS files
+├── types/           # Shared TypeScript interfaces
+└── firebase/        # Firebase app initialization
+```
+
+---
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+---
+
+## Deployment
+
+The `main` branch is connected to Vercel and deploys automatically on push. All environment variables above must be set in the Vercel project settings.
+
+---
+
+## Admin Access
+
+Admin roles are assigned manually. To grant admin access:
+1. Set `role: "admin"` on the user's Firestore document at `users/{uid}`
+2. Add their email to the `adminEmails` array in `adminSettings/config`

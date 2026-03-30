@@ -6,16 +6,16 @@ import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/home.css";
 
-import baklavasImage from "../../src/img/carousel/baklavas.jpg";
-import melomakaronaImage from "../../src/img/carousel/melomakarona & kourabiedes.jpg";
-import miniCheeseBitesImage from "../../src/img/carousel/mini cheese bites.jpg";
-import orangePieImage from "../../src/img/carousel/orange pie.jpg";
-import pastitsioImage from "../../src/img/carousel/pastitsio.jpg";
-import penneImage from "../../src/img/carousel/Penne with Seared Ahi Tuna.jpg";
-import slicedPitaImage from "../../src/img/carousel/Sliced Pita Bread with Paprika.jpg";
-import spanakopitaImage from "../../src/img/carousel/spanakopita 2.jpg";
-import tsourekiImage from "../../src/img/carousel/tsoureki.jpg";
-import tzatzikiImage from "../../src/img/carousel/tzatziki.jpg";
+import baklavasImage from "../../public/img/carousel/baklavas.jpg";
+import melomakaronaImage from "../../public/img/carousel/melomakarona & kourabiedes.jpg";
+import miniCheeseBitesImage from "../../public/img/carousel/mini cheese bites.jpg";
+import orangePieImage from "../../public/img/carousel/orange pie.jpg";
+import pastitsioImage from "../../public/img/carousel/pastitsio.jpg";
+import penneImage from "../../public/img/carousel/Penne with Seared Ahi Tuna.jpg";
+import slicedPitaImage from "../../public/img/carousel/Sliced Pita Bread with Paprika.jpg";
+import spanakopitaImage from "../../public/img/carousel/spanakopita 2.jpg";
+import tsourekiImage from "../../public/img/carousel/tsoureki.jpg";
+import tzatzikiImage from "../../public/img/carousel/tzatziki.jpg";
 
 export function meta({}: Route.MetaArgs) {
   return [

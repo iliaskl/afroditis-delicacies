@@ -3,8 +3,7 @@ import { Link } from "react-router";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
 import "../styles/about.css";
-import afroditiImage from "../../src/img/afroditi.jpg";
-import featureVid from "../../src/videos/feature_vid.mp4";
+import afroditiImage from "../../public/img/afroditi.jpg";
 
 export function meta() {
   return [
