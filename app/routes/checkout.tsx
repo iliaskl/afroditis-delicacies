@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Header from "../components/utils/header";
 import Footer from "../components/utils/footer";
-import logo from "../../src/img/logos/logo_t.png";
+import logo from "../../public/img/logos/logo_t.png";
 import { useAuth } from "../context/authContext/authContext";
 import { useUserProfile } from "../context/userContext/userProfile";
 import { useCart } from "../context/cartContext/cartContext";
@@ -387,15 +387,19 @@ export default function Checkout() {
       return;
     }
 
-    // TODO: uncomment this and test before actual prod and deploy. Prevents each user from placing more than 3 orders within 24 hours to avoid spam and abuse.
+    // Prevents each user from placing more than 3 orders within 24 hours to avoid spam and abuse.
+    const recentCount = await getRecentOrderCountForUser(user!.uid);
+    try {
+      if (recentCount >= 3) {
+        setSubmitError(
+          "You've placed too many orders in the last 24 hours. Please try again later.",
+        );
+        return;
+      }
+    } catch (err) {
+      console.error("Rate limit check failed:", err);
+    }
 
-    // const recentCount = await getRecentOrderCountForUser(user!.uid);
-    // if (recentCount >= 3) {
-    //   setSubmitError(
-    //     "You've placed too many orders in the last 24 hours. Please try again later.",
-    //   );
-    //   return;
-    // }
     setSubmitting(true);
     try {
       const items: OrderItem[] = cartItems.map((item) => ({
@@ -582,7 +586,7 @@ export default function Checkout() {
                   >
                     <span className="payment-option-icon">
                       <img
-                        src="./../../src/img/payment/paypal.png"
+                        src="./../../public/img/payment/paypal.png"
                         alt="PayPal"
                       />
                     </span>
@@ -604,7 +608,7 @@ export default function Checkout() {
                   >
                     <span className="payment-option-icon">
                       <img
-                        src="./../../src/img/payment/venmo.png"
+                        src="./../../public/img/payment/venmo.png"
                         alt="Venmo"
                       />
                     </span>
@@ -626,7 +630,7 @@ export default function Checkout() {
                   >
                     <span className="payment-option-icon">
                       <img
-                        src="./../../src/img/payment/money.png"
+                        src="./../../public/img/payment/money.png"
                         alt="Cash on Delivery"
                       />
                     </span>

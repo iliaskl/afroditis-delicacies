@@ -11,7 +11,6 @@ export async function action({ request }: ActionFunctionArgs) {
     "https://afroditisdelicacies.com",
     "https://www.afroditisdelicacies.com",
     "https://afroditis-delicacies.vercel.app",
-    "http://localhost:5173", // TODO: Remove this in production
   ];
   if (!origin || !allowedOrigins.includes(origin)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
