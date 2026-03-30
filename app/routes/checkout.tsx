@@ -586,7 +586,7 @@ export default function Checkout() {
                   >
                     <span className="payment-option-icon">
                       <img
-                        src="./../../public/img/payment/paypal.png"
+                        src="/img/payment/paypal.png"
                         alt="PayPal"
                       />
                     </span>
@@ -608,7 +608,7 @@ export default function Checkout() {
                   >
                     <span className="payment-option-icon">
                       <img
-                        src="./../../public/img/payment/venmo.png"
+                        src="/img/payment/venmo.png"
                         alt="Venmo"
                       />
                     </span>
@@ -630,7 +630,7 @@ export default function Checkout() {
                   >
                     <span className="payment-option-icon">
                       <img
-                        src="./../../public/img/payment/money.png"
+                        src="/img/payment/money.png"
                         alt="Cash on Delivery"
                       />
                     </span>
