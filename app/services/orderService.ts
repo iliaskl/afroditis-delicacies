@@ -102,6 +102,7 @@ export interface PlaceOrderPayload {
   };
   deliveryDate: Date;
   deliveryTime: string;
+  initialStatus?: OrderStatus;
 }
 
 export async function placeOrder(payload: PlaceOrderPayload): Promise<string> {
@@ -115,7 +116,7 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<string> {
       customerPhone: payload.customerPhone,
       items: payload.items,
       subtotal: payload.subtotal,
-      status: "pending" as OrderStatus,
+      status: (payload.initialStatus ?? "pending") as OrderStatus,
       paymentMethod: payload.paymentMethod,
       paymentStatus:
         payload.paymentMethod === "pay_on_delivery"

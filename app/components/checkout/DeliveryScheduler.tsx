@@ -89,6 +89,7 @@ interface DeliverySchedulerProps {
   onNextMonth: () => void;
   onDayClick: (day: Date) => void;
   onTimeSelect: (slot: string) => void;
+  hideTimeSlots?: boolean;
 }
 
 export default function DeliveryScheduler({
@@ -105,6 +106,7 @@ export default function DeliveryScheduler({
   onNextMonth,
   onDayClick,
   onTimeSelect,
+  hideTimeSlots = false,
 }: DeliverySchedulerProps) {
   const calendarDays = buildCalendarDays(calendarYear, calendarMonth);
 
@@ -163,7 +165,7 @@ export default function DeliveryScheduler({
         </div>
       </div>
 
-      {selectedDate && (
+      {selectedDate && !hideTimeSlots && (
         <div className="time-slots-wrapper">
           <p className="time-slots-label">
             Select delivery time on{" "}

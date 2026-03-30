@@ -2,15 +2,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext/authContext";
 import AddressAutocomplete from "../addressAutocomplete/AddressAutocomplete";
-import DeliveryScheduler, {
-  getEarliestDeliveryDate,
-} from "../checkout/DeliveryScheduler";
+import DeliveryScheduler from "../checkout/DeliveryScheduler";
 import AdminDishPopup from "./AdminDishPopup";
 import {
   placeOrder,
-  getBookedTimesForDate,
   subscribeToBlockedDays,
-  dateKey,
 } from "../../services/orderService";
 import { getMenuData } from "../../services/menuService";
 import type { AddressDetails } from "../../services/addressService";
@@ -101,10 +97,6 @@ export default function AdminOrderForm({
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [blockedDays, setBlockedDays] = useState<string[]>([]);
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
-  const [timesLoading, setTimesLoading] = useState(false);
 
   // ── Menu search ──
   const [allItems, setAllItems] = useState<MenuItem[]>([]);
@@ -133,36 +125,6 @@ export default function AdminOrderForm({
       .catch((err) => console.error("Failed to load menu:", err));
   }, []);
 
-  // ── Blocked days subscription ──
-  useEffect(() => {
-    const unsub = subscribeToBlockedDays(setBlockedDays);
-    return () => unsub();
-  }, []);
-
-  // ── Booked times polling ──
-  useEffect(() => {
-    if (!selectedDate) {
-      setBookedTimes([]);
-      return;
-    }
-    let cancelled = false;
-    const refresh = () => {
-      getBookedTimesForDate(selectedDate).then(({ booked }) => {
-        if (!cancelled) {
-          setBookedTimes(booked);
-          setTimesLoading(false);
-        }
-      });
-    };
-    setTimesLoading(true);
-    refresh();
-    const interval = setInterval(refresh, 15_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [selectedDate]);
-
   // ── Search filtering ──
   useEffect(() => {
     if (searchQuery.length < 2) {
@@ -184,20 +146,6 @@ export default function AdminOrderForm({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  // ── Invalidate date if item count changes lead time ──
-  const totalItems = lineItems.reduce((sum, li) => sum + li.quantity, 0);
-  const earliestDate = getEarliestDeliveryDate(totalItems);
-
-  useEffect(() => {
-    if (!selectedDate) return;
-    const d = new Date(selectedDate);
-    d.setHours(0, 0, 0, 0);
-    if (d < earliestDate) {
-      setSelectedDate(null);
-      setSelectedTime(null);
-    }
-  }, [totalItems]);
 
   // ── Address handler ──
   const handleAddressSelect = async (addr: AddressDetails) => {
@@ -246,11 +194,7 @@ export default function AdminOrderForm({
   };
 
   const handleDayClick = (day: Date) => {
-    const d = new Date(day);
-    d.setHours(0, 0, 0, 0);
-    if (d < earliestDate || blockedDays.includes(dateKey(d))) return;
     setSelectedDate(day);
-    setSelectedTime(null);
   };
 
   // ── Order line handlers ──
@@ -327,22 +271,8 @@ export default function AdminOrderForm({
       setSubmitError("Please select a delivery date.");
       return;
     }
-    if (!selectedTime) {
-      setSubmitError("Please select a delivery time.");
-      return;
-    }
     if (lineItems.length === 0) {
       setSubmitError("Please add at least one item to the order.");
-      return;
-    }
-
-    const { booked } = await getBookedTimesForDate(selectedDate);
-    if (booked.includes(selectedTime)) {
-      setSubmitError(
-        "This time slot was just taken. Please choose a different time.",
-      );
-      setSelectedTime(null);
-      setBookedTimes(booked);
       return;
     }
 
@@ -388,7 +318,8 @@ export default function AdminOrderForm({
           fullAddress: addressDetails.formattedAddress,
         },
         deliveryDate: selectedDate,
-        deliveryTime: selectedTime,
+        deliveryTime: "",
+        initialStatus: "active",
       });
 
       setSubmitSuccess(true);
@@ -544,19 +475,20 @@ export default function AdminOrderForm({
             </section>
 
             <DeliveryScheduler
-              totalItems={totalItems}
-              earliestDate={earliestDate}
-              blockedDays={blockedDays}
-              bookedTimes={bookedTimes}
-              timesLoading={timesLoading}
+              totalItems={0}
+              earliestDate={new Date(0)}
+              blockedDays={[]}
+              bookedTimes={[]}
+              timesLoading={false}
               calendarYear={calendarYear}
               calendarMonth={calendarMonth}
               selectedDate={selectedDate}
-              selectedTime={selectedTime}
+              selectedTime={null}
               onPrevMonth={prevMonth}
               onNextMonth={nextMonth}
               onDayClick={handleDayClick}
-              onTimeSelect={setSelectedTime}
+              onTimeSelect={() => {}}
+              hideTimeSlots
             />
           </div>
 
