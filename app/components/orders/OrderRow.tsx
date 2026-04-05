@@ -9,6 +9,8 @@ interface OrderRowProps {
   onDecline: (order: Order) => void;
   onDeliver: (order: Order) => void;
   onScrap: (order: Order) => void;
+  onDelete?: (order: Order) => void;
+  onEdit?: (order: Order) => void;
   showDeliverButton: boolean;
   showApproveDecline: boolean;
 }
@@ -59,6 +61,8 @@ export default function OrderRow({
   onDecline,
   onDeliver,
   onScrap,
+  onDelete,
+  onEdit,
   showDeliverButton,
   showApproveDecline,
 }: OrderRowProps) {
@@ -76,6 +80,7 @@ export default function OrderRow({
       pending: "badge-pending",
       active: "badge-active",
       declined: "badge-declined",
+      scrapped: "badge-scrapped",
       delivered: "badge-delivered",
     }[order.status] ?? "badge-pending";
 
@@ -122,6 +127,25 @@ export default function OrderRow({
           <span className={`order-status-badge ${statusBadgeClass}`}>
             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
           </span>
+          {onEdit && order.status === "active" && (
+            <button
+              className="deliver-btn"
+              onClick={() => onEdit(order)}
+              title="Edit order items"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+          )}
           {showDeliverButton && order.status === "active" && (
             <button
               className="deliver-btn"
@@ -145,6 +169,26 @@ export default function OrderRow({
               className="scrap-btn"
               onClick={() => onScrap(order)}
               title="Scrap order"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+              </svg>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              className="scrap-btn"
+              onClick={() => onDelete(order)}
+              title="Delete order"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -201,6 +245,14 @@ export default function OrderRow({
               <p>Payment: {paymentLabel(order.paymentMethod)}</p>
               <p>
                 Subtotal: <strong>${order.subtotal.toFixed(2)}</strong>
+                {order.discountPercent && (
+                  <>
+                    {" "}
+                    <span className="discount-badge">
+                      {order.discountPercent}% off
+                    </span>
+                  </>
+                )}
               </p>
               {order.adminNotes && (
                 <p className="admin-notes-text">Note: {order.adminNotes}</p>

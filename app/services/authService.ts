@@ -119,7 +119,6 @@ export async function registerUser(formData: AuthFormData): Promise<User> {
       lastName: sanitizedLast,
       displayName: `${sanitizedFirst} ${sanitizedLast}`,
       phoneNumber: sanitizeText(formData.phoneNumber || "", MAX_LENGTHS.phone),
-      emailVerified: false,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };

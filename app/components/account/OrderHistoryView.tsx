@@ -6,6 +6,7 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   pending: "Pending",
   active: "Approved",
   declined: "Declined",
+  scrapped: "Cancelled",
   delivered: "Delivered",
 };
 
@@ -13,6 +14,7 @@ const ORDER_STATUS_CLASS: Record<string, string> = {
   pending: "order-history-status-pending",
   active: "order-history-status-active",
   declined: "order-history-status-declined",
+  scrapped: "order-history-status-scrapped",
   delivered: "order-history-status-delivered",
 };
 
@@ -101,6 +103,11 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                   <div className="order-history-footer">
                     <span className="order-history-total">
                       ${order.subtotal.toFixed(2)}
+                      {order.discountPercent && (
+                        <span className="order-history-discount-badge">
+                          {order.discountPercent}% off
+                        </span>
+                      )}
                     </span>
                     <button
                       className="order-history-details-btn"
@@ -184,14 +191,14 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                   <span className="order-detail-label">Address</span>
                   <span className="order-detail-value">
                     {expandedOrder.deliveryAddress.fullAddress ||
-                    [
-                      expandedOrder.deliveryAddress.street,
-                      expandedOrder.deliveryAddress.city,
-                      expandedOrder.deliveryAddress.state,
-                      expandedOrder.deliveryAddress.zipCode,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")}
+                      [
+                        expandedOrder.deliveryAddress.street,
+                        expandedOrder.deliveryAddress.city,
+                        expandedOrder.deliveryAddress.state,
+                        expandedOrder.deliveryAddress.zipCode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
                   </span>
                 </div>
                 <div className="order-detail-row">
@@ -232,10 +239,17 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                     </div>
                   ))}
                 </div>
-              </div>          
+              </div>
 
               <div className="order-detail-total-row">
-                <span className="order-detail-total-label">Order Total</span>
+                <span className="order-detail-total-label">
+                  Order Total
+                  {expandedOrder.discountPercent && (
+                    <span className="order-history-discount-badge">
+                      {expandedOrder.discountPercent}% off
+                    </span>
+                  )}
+                </span>
                 <span className="order-detail-total-value">
                   ${expandedOrder.subtotal.toFixed(2)}
                 </span>

@@ -272,6 +272,11 @@
   border: 1px solid rgba(199, 81, 70, 0.25);
 }
 
+.badge-scrapped {
+  background: var(--badge-orange, #b85c00);
+  color: #fff;
+}
+
 .badge-delivered {
   background: rgba(118, 164, 181, 0.12);
   color: #2a6577;
@@ -551,6 +556,20 @@
   border-color: var(--badge-red);
 }
 
+.order-history-discount-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #eef2e6;
+  color: var(--sage-dark);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--sage);
+  vertical-align: middle;
+}
+
 /* ── Confirm Dialog ──────────────────────────────────────────────────────── */
 
 .confirm-overlay {
@@ -715,6 +734,145 @@
   color: var(--muted);
   font-style: italic;
   opacity: 0.7;
+}
+
+/* ── Discount Tool ───────────────────────────────────────────────────────── */
+
+.discount-wrapper {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.discount-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--ink-mid);
+}
+
+.discount-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.discount-input {
+  width: 90px;
+  padding: 0.4rem 0.6rem;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.95rem;
+  color: var(--ink);
+  border: 1px solid var(--border);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.discount-input:focus {
+  border-color: var(--sage);
+}
+
+.discount-symbol {
+  font-family: "Outfit", sans-serif;
+  font-size: 1rem;
+  color: var(--ink-mid);
+}
+
+.discount-preview {
+  background: #f7f9f3;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--sage);
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.discount-preview-title {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin: 0 0 0.25rem 0;
+}
+
+.discount-preview-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.discount-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.discount-preview-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.95rem;
+  color: var(--ink);
+  flex: 1;
+}
+
+.discount-preview-size {
+  color: var(--ink-mid);
+  font-size: 0.85rem;
+}
+
+.discount-preview-prices {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.discount-original {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85rem;
+  color: var(--ink-mid);
+  text-decoration: line-through;
+}
+
+.discount-arrow {
+  font-size: 0.75rem;
+  color: var(--ink-mid);
+}
+
+.discount-new {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.9rem;
+  color: var(--sage);
+  font-weight: 500;
+}
+
+.discount-preview-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+  margin-top: 0.25rem;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.discount-preview-total-values {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.discount-preview-total .discount-new {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* ── Pagination ──────────────────────────────────────────────────────────── */

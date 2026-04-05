@@ -11,6 +11,8 @@ interface OrderSectionProps {
   onDecline: (order: Order) => void;
   onDeliver: (order: Order) => void;
   onScrap: (order: Order) => void;
+  onDelete?: (order: Order) => void;
+  onEdit?: (order: Order) => void;
   showDeliverButton?: boolean;
   showApproveDecline?: boolean;
   accentColor?: string;
@@ -29,6 +31,8 @@ export default function OrderSection({
   onDecline,
   onDeliver,
   onScrap,
+  onDelete,
+  onEdit,
   showDeliverButton = false,
   showApproveDecline = false,
   accentColor = "#6b7e3f",
@@ -64,6 +68,8 @@ export default function OrderSection({
                 onDecline={onDecline}
                 onDeliver={onDeliver}
                 onScrap={onScrap}
+                onDelete={onDelete}
+                onEdit={onEdit}
                 showDeliverButton={showDeliverButton}
                 showApproveDecline={showApproveDecline}
               />

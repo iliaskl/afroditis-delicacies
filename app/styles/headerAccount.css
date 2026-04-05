@@ -772,6 +772,11 @@ body.modal-open {
   border: 1px solid rgba(199, 81, 70, 0.3);
 }
 
+.order-history-status-scrapped {
+  background: #f5e6d6;
+  color: #b85c00;
+}
+
 .order-history-status-delivered {
   background: rgba(118, 164, 181, 0.15);
   color: #2a6577;
@@ -862,6 +867,20 @@ body.modal-open {
 .order-history-details-btn:hover {
   background-color: var(--sage-tint);
   color: var(--sage-dark);
+}
+
+.order-history-discount-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #eef2e6;
+  color: var(--sage-dark);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--sage);
+  vertical-align: middle;
 }
 
 /* ── Manage Calendar View ────────────────────────────────────────────────── */

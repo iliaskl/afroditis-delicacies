@@ -9,13 +9,16 @@ import {
   subscribeToAllOrders,
   approveOrder,
   declineOrder,
+  scrapOrder,
   markOrderDelivered,
+  deleteOrder,
 } from "../services/orderService";
 import { emailService } from "../services/emailService";
 import type { Order } from "../types/types";
 import OrderSection from "../components/orders/OrderSection";
 import ConfirmDialog from "../components/orders/ConfirmDialog";
 import AdminOrderForm from "../components/orders/AdminOrderForm";
+import EditOrderModal from "../components/orders/EditOrderModal";
 import "../styles/orders.css";
 import { sanitizeText, MAX_LENGTHS } from "../utils/sanitize";
 
@@ -37,15 +40,17 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [confirmState, setConfirmState] = useState<{
-    type: "approve" | "decline" | "deliver" | "scrap";
+    type: "approve" | "decline" | "deliver" | "scrap" | "delete";
     order: Order;
   } | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [declineNote, setDeclineNote] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const [newPage, setNewPage] = useState(0);
   const [activePage, setActivePage] = useState(0);
   const [inactivePage, setInactivePage] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState<string>("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -69,9 +74,13 @@ export default function Orders() {
     .sort((a, b) => deliveryDateTime(a) - deliveryDateTime(b));
 
   const inactiveOrders = orders
-    .filter((o) => o.status === "delivered" || o.status === "declined")
+    .filter(
+      (o) =>
+        o.status === "delivered" ||
+        o.status === "declined" ||
+        o.status === "scrapped",
+    )
     .sort((a, b) => deliveryDateTime(b) - deliveryDateTime(a));
-
   const clampedNewPage = Math.min(
     newPage,
     Math.max(0, Math.ceil(newOrders.length / PAGE_SIZE) - 1),
@@ -115,13 +124,26 @@ export default function Orders() {
     setConfirmState({ type: "scrap", order });
   };
 
+  const handleDelete = (order: Order) => {
+    setConfirmState({ type: "delete", order });
+  };
+
+  const handleEdit = (order: Order) => {
+    setEditingOrder(order);
+  };
+
   const handleConfirm = async () => {
     if (!confirmState) return;
     setActionLoading(true);
     try {
       const { type, order } = confirmState;
       if (type === "approve") {
-        await approveOrder(order.id);
+        const parsedDiscount = parseFloat(discountPercent);
+        const discount =
+          !isNaN(parsedDiscount) && parsedDiscount > 0 && parsedDiscount < 100
+            ? parsedDiscount
+            : undefined;
+        await approveOrder(order.id, discount);
         const { getOrderById } = await import("../services/orderService");
         const updatedOrder = await getOrderById(order.id);
         if (updatedOrder) {
@@ -144,15 +166,9 @@ export default function Orders() {
       } else if (type === "scrap") {
         const sanitizedNote =
           sanitizeText(declineNote, MAX_LENGTHS.declineNote) || undefined;
-        await declineOrder(order.id, sanitizedNote);
-        const { getOrderById } = await import("../services/orderService");
-        const updatedOrder = await getOrderById(order.id);
-        if (updatedOrder) {
-          await emailService.sendOrderScrappedToCustomer(
-            updatedOrder,
-            sanitizedNote,
-          );
-        }
+        await scrapOrder(order.id, sanitizedNote);
+      } else if (type === "delete") {
+        await deleteOrder(order.id);
       }
     } catch (error) {
       console.error("Action failed:", error);
@@ -161,6 +177,7 @@ export default function Orders() {
       setActionLoading(false);
       setConfirmState(null);
       setDeclineNote("");
+      setDiscountPercent("");
     }
   };
 
@@ -168,6 +185,7 @@ export default function Orders() {
     if (actionLoading) return;
     setConfirmState(null);
     setDeclineNote("");
+    setDiscountPercent("");
   };
 
   if (authLoading || !isAdmin) return null;
@@ -230,6 +248,7 @@ export default function Orders() {
                 onDecline={handleDecline}
                 onDeliver={handleDeliver}
                 onScrap={handleScrap}
+                onEdit={handleEdit}
                 showDeliverButton={true}
                 accentColor="#6b7e3f"
                 page={clampedActivePage}
@@ -245,6 +264,7 @@ export default function Orders() {
                 onDecline={handleDecline}
                 onDeliver={handleDeliver}
                 onScrap={handleScrap}
+                onDelete={handleDelete}
                 accentColor="#8a8a7a"
                 page={clampedInactivePage}
                 pageSize={PAGE_SIZE}
@@ -264,14 +284,97 @@ export default function Orders() {
         />
       )}
 
-      {confirmState?.type === "approve" && (
-        <ConfirmDialog
-          message={`Approve order ${confirmState.order.orderCode} for ${confirmState.order.customerName}?`}
-          confirmLabel={actionLoading ? "Approving…" : "Yes, Approve"}
-          onConfirm={handleConfirm}
-          onCancel={handleCancelConfirm}
-        />
-      )}
+      {confirmState?.type === "approve" &&
+        (() => {
+          const order = confirmState.order;
+          const parsed = parseFloat(discountPercent);
+          const validDiscount =
+            !isNaN(parsed) && parsed > 0 && parsed < 100 ? parsed : null;
+          const discountedTotal = validDiscount
+            ? order.subtotal * (1 - validDiscount / 100)
+            : null;
+
+          return (
+            <ConfirmDialog
+              message={`Approve order ${order.orderCode} for ${order.customerName}?`}
+              confirmLabel={actionLoading ? "Approving…" : "Yes, Approve"}
+              onConfirm={handleConfirm}
+              onCancel={handleCancelConfirm}
+              extraContent={
+                <div className="discount-wrapper">
+                  <label className="discount-label">
+                    Apply discount (optional):
+                  </label>
+                  <div className="discount-input-row">
+                    <input
+                      type="number"
+                      className="discount-input"
+                      value={discountPercent}
+                      onChange={(e) => setDiscountPercent(e.target.value)}
+                      placeholder="e.g. 10"
+                      min="1"
+                      max="99"
+                    />
+                    <span className="discount-symbol">%</span>
+                  </div>
+
+                  {validDiscount && discountedTotal !== null && (
+                    <div className="discount-preview">
+                      <p className="discount-preview-title">Price Preview</p>
+                      <div className="discount-preview-items">
+                        {order.items.map((item, i) =>
+                          item.quantities.map((q, j) => {
+                            const original = q.price * q.quantity;
+                            const discounted =
+                              original * (1 - validDiscount / 100);
+                            return (
+                              <div
+                                key={`${i}-${j}`}
+                                className="discount-preview-row"
+                              >
+                                <span className="discount-preview-name">
+                                  {item.dishName}
+                                  {q.size !== "single" && (
+                                    <span className="discount-preview-size">
+                                      {" "}
+                                      ({q.size})
+                                    </span>
+                                  )}{" "}
+                                  ×{q.quantity}
+                                </span>
+                                <span className="discount-preview-prices">
+                                  <span className="discount-original">
+                                    ${original.toFixed(2)}
+                                  </span>
+                                  <span className="discount-arrow">→</span>
+                                  <span className="discount-new">
+                                    ${discounted.toFixed(2)}
+                                  </span>
+                                </span>
+                              </div>
+                            );
+                          }),
+                        )}
+                      </div>
+                      <div className="discount-preview-total">
+                        <span>Order Total</span>
+                        <span className="discount-preview-total-values">
+                          <span className="discount-original">
+                            ${order.subtotal.toFixed(2)}
+                          </span>
+                          <span className="discount-arrow">→</span>
+                          <span className="discount-new">
+                            ${discountedTotal.toFixed(2)}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              }
+            />
+          );
+        })()}
       {confirmState?.type === "decline" && (
         <ConfirmDialog
           message={`Decline order ${confirmState.order.orderCode} for ${confirmState.order.customerName}?`}
@@ -325,6 +428,23 @@ export default function Orders() {
               />
             </div>
           }
+        />
+      )}
+      {confirmState?.type === "delete" && (
+        <ConfirmDialog
+          message={`Permanently delete order ${confirmState.order.orderCode}? This cannot be undone.`}
+          confirmLabel={actionLoading ? "Deleting…" : "Yes, Delete"}
+          confirmDanger={true}
+          onConfirm={handleConfirm}
+          onCancel={handleCancelConfirm}
+        />
+      )}
+
+      {editingOrder && (
+        <EditOrderModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSuccess={() => setEditingOrder(null)}
         />
       )}
     </div>
