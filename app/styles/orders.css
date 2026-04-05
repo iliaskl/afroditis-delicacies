@@ -556,6 +556,20 @@
   border-color: var(--badge-red);
 }
 
+.order-history-discount-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #eef2e6;
+  color: var(--sage-dark);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--sage);
+  vertical-align: middle;
+}
+
 /* ── Confirm Dialog ──────────────────────────────────────────────────────── */
 
 .confirm-overlay {

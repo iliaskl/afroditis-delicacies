@@ -399,9 +399,9 @@ class EmailService {
                 BRAND.green,
                 "#EEF2E6",
                 `<strong>🎉 ${order.discountPercent}% Discount Applied!</strong><br/>
-                Your order total has been reduced from
-                <span style="text-decoration:line-through;color:${BRAND.muted};">$${order.subtotal.toFixed(2)}</span>
-                to <strong style="color:${BRAND.darkGreen};">$${order.discountedSubtotal.toFixed(2)}</strong>.`,
+        Your order total has been reduced from
+        <span style="text-decoration:line-through;color:${BRAND.muted};">$${(order.discountedSubtotal / (1 - order.discountPercent / 100)).toFixed(2)}</span>
+        to <strong style="color:${BRAND.darkGreen};">$${order.discountedSubtotal.toFixed(2)}</strong>.`,
               )
             : ""
         }

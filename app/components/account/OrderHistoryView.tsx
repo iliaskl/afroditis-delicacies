@@ -103,6 +103,11 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                   <div className="order-history-footer">
                     <span className="order-history-total">
                       ${order.subtotal.toFixed(2)}
+                      {order.discountPercent && (
+                        <span className="order-history-discount-badge">
+                          {order.discountPercent}% off
+                        </span>
+                      )}
                     </span>
                     <button
                       className="order-history-details-btn"
@@ -237,7 +242,14 @@ const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
               </div>
 
               <div className="order-detail-total-row">
-                <span className="order-detail-total-label">Order Total</span>
+                <span className="order-detail-total-label">
+                  Order Total
+                  {expandedOrder.discountPercent && (
+                    <span className="order-history-discount-badge">
+                      {expandedOrder.discountPercent}% off
+                    </span>
+                  )}
+                </span>
                 <span className="order-detail-total-value">
                   ${expandedOrder.subtotal.toFixed(2)}
                 </span>

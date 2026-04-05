@@ -245,6 +245,14 @@ export default function OrderRow({
               <p>Payment: {paymentLabel(order.paymentMethod)}</p>
               <p>
                 Subtotal: <strong>${order.subtotal.toFixed(2)}</strong>
+                {order.discountPercent && (
+                  <>
+                    {" "}
+                    <span className="discount-badge">
+                      {order.discountPercent}% off
+                    </span>
+                  </>
+                )}
               </p>
               {order.adminNotes && (
                 <p className="admin-notes-text">Note: {order.adminNotes}</p>
