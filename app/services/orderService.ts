@@ -352,11 +352,28 @@ export async function approveOrder(
     if (discountPercent !== undefined && discountPercent > 0) {
       const orderSnap = await getDoc(doc(db, "orders", orderId));
       if (orderSnap.exists()) {
-        const subtotal = orderSnap.data().subtotal ?? 0;
-        update.discountPercent = discountPercent;
-        update.discountedSubtotal = parseFloat(
-          (subtotal * (1 - discountPercent / 100)).toFixed(2),
+        const data = orderSnap.data();
+        const originalSubtotal: number = data.subtotal ?? 0;
+        const multiplier = 1 - discountPercent / 100;
+        const discountedSubtotal = parseFloat(
+          (originalSubtotal * multiplier).toFixed(2),
         );
+
+        const updatedItems = (data.items ?? []).map((item: any) => ({
+          ...item,
+          itemSubtotal: parseFloat(
+            ((item.itemSubtotal ?? 0) * multiplier).toFixed(2),
+          ),
+          quantities: (item.quantities ?? []).map((q: any) => ({
+            ...q,
+            price: parseFloat((q.price * multiplier).toFixed(2)),
+          })),
+        }));
+
+        update.discountPercent = discountPercent;
+        update.discountedSubtotal = discountedSubtotal;
+        update.subtotal = discountedSubtotal;
+        update.items = updatedItems;
       }
     }
 
