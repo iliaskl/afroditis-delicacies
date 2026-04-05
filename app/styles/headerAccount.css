@@ -772,6 +772,11 @@ body.modal-open {
   border: 1px solid rgba(199, 81, 70, 0.3);
 }
 
+.order-history-status-scrapped {
+  background: #f5e6d6;
+  color: #b85c00;
+}
+
 .order-history-status-delivered {
   background: rgba(118, 164, 181, 0.15);
   color: #2a6577;

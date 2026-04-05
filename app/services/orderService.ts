@@ -10,6 +10,7 @@ import {
   Timestamp,
   getDoc,
   setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import type {
@@ -46,6 +47,8 @@ function docToOrder(id: string, data: Record<string, any>): Order {
     deliveryTime: data.deliveryTime,
     orderDate: data.orderDate?.toDate?.() ?? new Date(data.orderDate),
     adminNotes: data.adminNotes || "",
+    discountPercent: data.discountPercent ?? undefined,
+    discountedSubtotal: data.discountedSubtotal ?? undefined,
     isNewForAdmin: data.isNewForAdmin ?? true,
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(data.updatedAt),
   };
@@ -335,13 +338,29 @@ async function removeBookedSlotsForDecline(
 
 // ─── Admin Actions ────────────────────────────────────────────────────────────
 
-export async function approveOrder(orderId: string): Promise<void> {
+export async function approveOrder(
+  orderId: string,
+  discountPercent?: number,
+): Promise<void> {
   try {
-    await updateDoc(doc(db, "orders", orderId), {
+    const update: Record<string, any> = {
       status: "active",
       isNewForAdmin: false,
       updatedAt: Timestamp.now(),
-    });
+    };
+
+    if (discountPercent !== undefined && discountPercent > 0) {
+      const orderSnap = await getDoc(doc(db, "orders", orderId));
+      if (orderSnap.exists()) {
+        const subtotal = orderSnap.data().subtotal ?? 0;
+        update.discountPercent = discountPercent;
+        update.discountedSubtotal = parseFloat(
+          (subtotal * (1 - discountPercent / 100)).toFixed(2),
+        );
+      }
+    }
+
+    await updateDoc(doc(db, "orders", orderId), update);
   } catch (error) {
     console.error("Error approving order:", error);
     throw new Error("Failed to approve order.");
@@ -372,6 +391,30 @@ export async function declineOrder(
   }
 }
 
+export async function scrapOrder(
+  orderId: string,
+  adminNotes?: string,
+): Promise<void> {
+  try {
+    const orderSnap = await getDoc(doc(db, "orders", orderId));
+    if (!orderSnap.exists()) throw new Error("Order not found.");
+    const data = orderSnap.data();
+    const deliveryDate: Date =
+      data.deliveryDate?.toDate?.() ?? new Date(data.deliveryDate);
+
+    await updateDoc(doc(db, "orders", orderId), {
+      status: "scrapped",
+      isNewForAdmin: false,
+      adminNotes: adminNotes || "",
+      updatedAt: Timestamp.now(),
+    });
+    await removeBookedSlotsForDecline(deliveryDate, data.deliveryTime);
+  } catch (error) {
+    console.error("Error scrapping order:", error);
+    throw new Error("Failed to scrap order.");
+  }
+}
+
 export async function markOrderDelivered(orderId: string): Promise<void> {
   try {
     await updateDoc(doc(db, "orders", orderId), {
@@ -385,6 +428,23 @@ export async function markOrderDelivered(orderId: string): Promise<void> {
   }
 }
 
+export async function updateOrderItems(
+  orderId: string,
+  items: OrderItem[],
+  subtotal: number,
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, "orders", orderId), {
+      items,
+      subtotal,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error("Error updating order items:", error);
+    throw new Error("Failed to update order items.");
+  }
+}
+
 export async function markOrderViewedByAdmin(orderId: string): Promise<void> {
   try {
     await updateDoc(doc(db, "orders", orderId), {
@@ -393,6 +453,15 @@ export async function markOrderViewedByAdmin(orderId: string): Promise<void> {
     });
   } catch (error) {
     console.error("Error marking order as viewed:", error);
+  }
+}
+
+export async function deleteOrder(orderId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, "orders", orderId));
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    throw new Error("Failed to delete order.");
   }
 }
 

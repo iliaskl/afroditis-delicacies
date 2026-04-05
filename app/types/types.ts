@@ -37,6 +37,7 @@ export type OrderStatus =
   | "pending" // Customer placed order, awaiting admin review
   | "active" // Admin approved, order is being prepared / en route
   | "declined" // Admin declined the order
+  | "scrapped"
   | "delivered"; // Admin marked as delivered
 
 export type PaymentMethod = "paypal" | "venmo" | "pay_on_delivery";
@@ -63,8 +64,10 @@ export interface Order {
   deliveryDate: Date; // Selected delivery date
   deliveryTime: string; // e.g. "2:00 PM"
   orderDate: Date; // When the order was placed
-  adminNotes?: string; // Optional notes from admin (e.g. reason for decline)
-  isNewForAdmin: boolean; // True until admin first views / acts on the order
+  adminNotes?: string;
+  discountPercent?: number;
+  discountedSubtotal?: number;
+  isNewForAdmin: boolean;
   updatedAt: Date;
 }
 

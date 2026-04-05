@@ -135,6 +135,8 @@ function alertBox(color: string, bgColor: string, html: string): string {
 }
 
 function paymentBox(order: Order): string {
+  const amount = (order.discountedSubtotal ?? order.subtotal).toFixed(2);
+
   if (order.paymentMethod === "pay_on_delivery") {
     return alertBox(
       BRAND.green,
@@ -146,14 +148,14 @@ function paymentBox(order: Order): string {
     return alertBox(
       BRAND.blue,
       "#EDF3F6",
-      `<strong>Venmo Payment</strong><br/>Please send <strong>$${order.subtotal.toFixed(2)}</strong> to:<br/>
+      `<strong>Venmo Payment</strong><br/>Please send <strong>$${amount}</strong> to:<br/>
       <a href="https://venmo.com/Afroditi-Kritikou" style="color:${BRAND.blue};font-weight:bold;">@Afroditi-Kritikou on Venmo</a>`,
     );
   }
   return alertBox(
     BRAND.gold,
     "#F5F0E4",
-    `<strong>PayPal Payment</strong><br/>Please send <strong>$${order.subtotal.toFixed(2)}</strong> to:<br/>
+    `<strong>PayPal Payment</strong><br/>Please send <strong>$${amount}</strong> to:<br/>
     <a href="https://paypal.me/AfroditiSDeli" style="color:${BRAND.gold};font-weight:bold;">paypal.me/AfroditiSDeli</a>`,
   );
 }
@@ -197,6 +199,30 @@ class EmailService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || "Failed to send email");
+    }
+  }
+
+  private async getAdminEmails(): Promise<string[]> {
+    const configSnap = await getDoc(doc(db, "adminSettings", "config"));
+    if (!configSnap.exists()) {
+      console.error("adminSettings/config document not found.");
+      return [];
+    }
+    const adminEmails: string[] = configSnap.data().adminEmails ?? [];
+    if (adminEmails.length === 0) {
+      console.error("adminEmails array is empty in adminSettings/config.");
+    }
+    return adminEmails;
+  }
+
+  private async sendAdminCopies(
+    adminEmails: string[],
+    subject: string,
+    body: string,
+    type: string,
+  ): Promise<void> {
+    for (const adminEmail of adminEmails) {
+      await this.sendEmail({ to: adminEmail, subject, body, type });
     }
   }
 
@@ -318,26 +344,15 @@ class EmailService {
         </div>
       `;
 
-      const configSnap = await getDoc(doc(db, "adminSettings", "config"));
-      if (!configSnap.exists()) {
-        console.error("adminSettings/config document not found.");
-        return;
-      }
+      const adminEmails = await this.getAdminEmails();
+      if (adminEmails.length === 0) return;
 
-      const adminEmails: string[] = configSnap.data().adminEmails ?? [];
-      if (adminEmails.length === 0) {
-        console.error("adminEmails array is empty in adminSettings/config.");
-        return;
-      }
-
-      for (const adminEmail of adminEmails) {
-        await this.sendEmail({
-          to: adminEmail,
-          subject: `New Order — ${order.orderCode} from ${order.customerName} | Afroditi's Delicacies`,
-          body: emailWrapper(content),
-          type: "new_order_admin",
-        });
-      }
+      await this.sendAdminCopies(
+        adminEmails,
+        `New Order — ${order.orderCode} from ${order.customerName} | Afroditi's Delicacies`,
+        emailWrapper(content),
+        "new_order_admin",
+      );
     } catch (error) {
       console.error("Error sending admin order notification:", error);
     }
@@ -378,20 +393,111 @@ class EmailService {
 
         ${paymentBox(order)}
 
+        ${
+          order.discountPercent && order.discountedSubtotal
+            ? alertBox(
+                BRAND.green,
+                "#EEF2E6",
+                `<strong>🎉 ${order.discountPercent}% Discount Applied!</strong><br/>
+                Your order total has been reduced from
+                <span style="text-decoration:line-through;color:${BRAND.muted};">$${order.subtotal.toFixed(2)}</span>
+                to <strong style="color:${BRAND.darkGreen};">$${order.discountedSubtotal.toFixed(2)}</strong>.`,
+              )
+            : ""
+        }
+
         <p style="margin:24px 0 0 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;line-height:1.7;">
           We're cooking with love and can't wait for you to enjoy your meal!<br/>
           <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
         </p>
       `;
 
+      const customerSubject = `Order Confirmed — ${order.orderCode} | Afroditi's Delicacies`;
+      const emailBody = emailWrapper(content);
+
       await this.sendEmail({
         to: order.customerEmail,
-        subject: `Order Confirmed — ${order.orderCode} | Afroditi's Delicacies`,
-        body: emailWrapper(content),
+        subject: customerSubject,
+        body: emailBody,
         type: "order_approved_customer",
       });
+
+      const adminEmails = await this.getAdminEmails();
+      if (adminEmails.length > 0) {
+        await this.sendAdminCopies(
+          adminEmails,
+          `[Admin Copy] ${customerSubject}`,
+          emailBody,
+          "order_approved_admin_copy",
+        );
+      }
     } catch (error) {
       console.error("Error sending order approved email:", error);
+    }
+  }
+
+  /**
+   * Sent to customer when admin edits an active order's items.
+   */
+  async sendOrderUpdatedToCustomer(order: Order): Promise<void> {
+    try {
+      const content = `
+        <h2 style="margin:0 0 6px 0;font-size:22px;font-weight:normal;color:${BRAND.darkGreen};font-family:Georgia,serif;">Your Order Has Been Updated</h2>
+        <p style="margin:0 0 24px 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;">Hi ${firstName(order.customerName)}, we've made a change to your order. Here's the updated summary:</p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"><tbody>
+          ${sectionDivider()}
+        </tbody></table>
+
+        <p style="margin:0 0 12px 0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${BRAND.green};font-family:Georgia,serif;">Updated Order</p>
+        ${orderItemsTable(order)}
+
+        <div style="height:24px;"></div>
+
+        <table width="100%" cellpadding="0" cellspacing="0"><tbody>
+          ${sectionDivider()}
+        </tbody></table>
+
+        <p style="margin:0 0 12px 0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${BRAND.green};font-family:Georgia,serif;">Delivery Details</p>
+        ${infoGrid([
+          {
+            label: "Order ID",
+            value: `<span style="font-family:monospace;font-size:14px;background:#EEF2E6;padding:2px 8px;">${order.orderCode}</span>`,
+          },
+          { label: "Delivery", value: formatDeliveryDate(order) },
+          { label: "Address", value: order.deliveryAddress.fullAddress },
+          { label: "Payment", value: formatPaymentLabel(order.paymentMethod) },
+        ])}
+
+        ${paymentBox(order)}
+
+        <p style="margin:24px 0 0 0;font-size:15px;color:${BRAND.muted};font-family:Georgia,serif;line-height:1.7;">
+          If you have any questions about these changes, please don't hesitate to reach out.<br/>
+          <span style="color:${BRAND.green};font-style:italic;">— Afroditi</span>
+        </p>
+      `;
+
+      const customerSubject = `Order Updated — ${order.orderCode} | Afroditi's Delicacies`;
+      const emailBody = emailWrapper(content);
+
+      await this.sendEmail({
+        to: order.customerEmail,
+        subject: customerSubject,
+        body: emailBody,
+        type: "order_updated_customer",
+      });
+
+      const adminEmails = await this.getAdminEmails();
+      if (adminEmails.length > 0) {
+        await this.sendAdminCopies(
+          adminEmails,
+          `[Admin Copy] ${customerSubject}`,
+          emailBody,
+          "order_updated_admin_copy",
+        );
+      }
+    } catch (error) {
+      console.error("Error sending order updated email:", error);
     }
   }
 
@@ -438,12 +544,25 @@ class EmailService {
         </p>
       `;
 
+      const customerSubject = `Order Update — ${order.orderCode} | Afroditi's Delicacies`;
+      const emailBody = emailWrapper(content);
+
       await this.sendEmail({
         to: order.customerEmail,
-        subject: `Order Update — ${order.orderCode} | Afroditi's Delicacies`,
-        body: emailWrapper(content),
+        subject: customerSubject,
+        body: emailBody,
         type: "order_declined_customer",
       });
+
+      const adminEmails = await this.getAdminEmails();
+      if (adminEmails.length > 0) {
+        await this.sendAdminCopies(
+          adminEmails,
+          `[Admin Copy] ${customerSubject}`,
+          emailBody,
+          "order_declined_admin_copy",
+        );
+      }
     } catch (error) {
       console.error("Error sending order declined email:", error);
     }
@@ -492,12 +611,25 @@ class EmailService {
         </p>
       `;
 
+      const customerSubject = `Order Cancelled — ${order.orderCode} | Afroditi's Delicacies`;
+      const emailBody = emailWrapper(content);
+
       await this.sendEmail({
         to: order.customerEmail,
-        subject: `Order Cancelled — ${order.orderCode} | Afroditi's Delicacies`,
-        body: emailWrapper(content),
+        subject: customerSubject,
+        body: emailBody,
         type: "order_scrapped_customer",
       });
+
+      const adminEmails = await this.getAdminEmails();
+      if (adminEmails.length > 0) {
+        await this.sendAdminCopies(
+          adminEmails,
+          `[Admin Copy] ${customerSubject}`,
+          emailBody,
+          "order_scrapped_admin_copy",
+        );
+      }
     } catch (error) {
       console.error("Error sending order scrapped email:", error);
     }
